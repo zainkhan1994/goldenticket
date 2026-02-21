@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NeuroCompass — GPU-Powered Chat</title>
+  <style>
+    /* -----------------------------------------------------------------------
+       Base reset and typography
+       A clean sans-serif font makes the interface feel modern and accessible.
+    ----------------------------------------------------------------------- */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+    }
+
+    /* -----------------------------------------------------------------------
+       App container — max width keeps long lines readable on wide screens
+    ----------------------------------------------------------------------- */
+    .app {
+      width: 100%;
+      max-width: 720px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* -----------------------------------------------------------------------
+       Header section
+    ----------------------------------------------------------------------- */
+    header {
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #76d400; /* NVIDIA green */
+    }
+
+    header .subtitle {
+      font-size: 0.9rem;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+
+    /* -----------------------------------------------------------------------
+       Explainer card — tells the user what they are testing so the UI is
+       self-documenting (no need to read the README to understand what to type)
+    ----------------------------------------------------------------------- */
+    .explainer {
+      background: #1e2130;
+      border: 1px solid #2d3748;
+      border-radius: 10px;
+      padding: 16px 20px;
+    }
+
+    .explainer h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #76d400;
+      margin-bottom: 8px;
+    }
+
+    .explainer p {
+      font-size: 0.875rem;
+      color: #94a3b8;
+      line-height: 1.6;
+    }
+
+    .explainer ul {
+      margin-top: 8px;
+      padding-left: 20px;
+      font-size: 0.875rem;
+      color: #94a3b8;
+      line-height: 1.8;
+    }
+
+    /* -----------------------------------------------------------------------
+       Chat message list
+    ----------------------------------------------------------------------- */
+    #messages {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 200px;
+    }
+
+    .message {
+      max-width: 85%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      white-space: pre-wrap; /* preserve newlines in model output */
+      word-break: break-word;
+    }
+
+    /* User messages appear on the right */
+    .message.user {
+      align-self: flex-end;
+      background: #2563eb;
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+
+    /* Assistant messages appear on the left */
+    .message.assistant {
+      align-self: flex-start;
+      background: #1e2130;
+      border: 1px solid #2d3748;
+      border-bottom-left-radius: 4px;
+    }
+
+    /* Error messages are styled in amber to be noticeable but not alarming */
+    .message.error {
+      align-self: flex-start;
+      background: #451a03;
+      border: 1px solid #92400e;
+      color: #fcd34d;
+      font-size: 0.85rem;
+    }
+
+    /* -----------------------------------------------------------------------
+       Loading indicator — three animated dots that bounce while waiting
+       for the model to respond. This gives the user clear feedback that
+       the request is in flight and they should wait.
+    ----------------------------------------------------------------------- */
+    .loading {
+      align-self: flex-start;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 12px 16px;
+      background: #1e2130;
+      border: 1px solid #2d3748;
+      border-radius: 12px;
+      border-bottom-left-radius: 4px;
+    }
+
+    .loading span {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #76d400;
+      animation: bounce 1.2s infinite;
+    }
+
+    .loading span:nth-child(2) { animation-delay: 0.2s; }
+    .loading span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+      30%            { transform: translateY(-6px); opacity: 1; }
+    }
+
+    /* -----------------------------------------------------------------------
+       Input area
+    ----------------------------------------------------------------------- */
+    .input-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    #userInput {
+      flex: 1;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid #2d3748;
+      background: #1e2130;
+      color: #e2e8f0;
+      font-size: 0.9rem;
+      resize: none;
+      min-height: 48px;
+      max-height: 200px;
+      overflow-y: auto;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    #userInput:focus { border-color: #76d400; }
+
+    #userInput::placeholder { color: #4a5568; }
+
+    #sendBtn {
+      padding: 12px 20px;
+      border-radius: 8px;
+      background: #76d400;
+      color: #0f1117;
+      font-weight: 700;
+      font-size: 0.9rem;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s, opacity 0.2s;
+      align-self: flex-end;
+    }
+
+    #sendBtn:hover:not(:disabled) { background: #65b800; }
+    #sendBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* -----------------------------------------------------------------------
+       Status bar — shows the API endpoint and connection state
+    ----------------------------------------------------------------------- */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+      color: #4a5568;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4a5568; /* grey = unknown */
+    }
+
+    .status-dot.online  { background: #76d400; }
+    .status-dot.offline { background: #ef4444; }
+
+    footer {
+      font-size: 0.75rem;
+      color: #2d3748;
+      text-align: center;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+
+    <!-- ===================================================================
+         Header
+    =================================================================== -->
+    <header>
+      <h1>🧭 NeuroCompass</h1>
+      <p class="subtitle">GPU-Accelerated Cognitive Drift Detection · Llama 3 via NVIDIA NIM</p>
+    </header>
+
+    <!-- ===================================================================
+         Explainer card
+         This section tells the user what the application does and what
+         kinds of questions they should ask, so the demo is self-contained.
+    =================================================================== -->
+    <div class="explainer">
+      <h2>What you are testing</h2>
+      <p>
+        This interface connects directly to a <strong>Llama 3 8B</strong> language model
+        running on a real NVIDIA GPU inside a Kubernetes cluster. The model has been
+        instructed to act as a cognitive wellness assistant that detects behavioral drift
+        and suggests corrective actions.
+      </p>
+      <ul>
+        <li>Ask about sleep patterns, energy levels, or disrupted routines.</li>
+        <li>Describe behavioral changes and ask for structured guidance.</li>
+        <li>Try: <em>"I have been sleeping 4 hours a night for two weeks. What should I do?"</em></li>
+      </ul>
+    </div>
+
+    <!-- ===================================================================
+         Chat message list
+         Messages are appended here dynamically by JavaScript.
+    =================================================================== -->
+    <div id="messages" role="log" aria-live="polite" aria-label="Chat messages"></div>
+
+    <!-- ===================================================================
+         Status bar — shows whether the model endpoint is reachable
+    =================================================================== -->
+    <div class="status-bar">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Checking connection to model…</span>
+    </div>
+
+    <!-- ===================================================================
+         Input row — textarea + send button
+    =================================================================== -->
+    <div class="input-row">
+      <!--
+        Using a <textarea> instead of <input type="text"> allows multiline
+        messages, which is more natural for longer health descriptions.
+      -->
+      <textarea
+        id="userInput"
+        rows="1"
+        placeholder="Describe a behavioral pattern or ask a question…"
+        aria-label="Your message"
+      ></textarea>
+      <button id="sendBtn" aria-label="Send message">Send</button>
+    </div>
+
+    <footer>
+      Powered by NVIDIA NIM · Llama 3 · TensorRT · GKE ·
+      <a href="https://github.com/zainkhan1994/goldenticket" style="color:#2d3748;" target="_blank" rel="noopener noreferrer">Source</a>
+    </footer>
+
+  </div>
+
+  <script>
+    // =========================================================================
+    // Configuration
+    // =========================================================================
+    // NIM exposes an OpenAI-compatible API. When running locally via
+    // "kubectl port-forward service/nim-llm 8000:8000", the endpoint is:
+    const API_BASE = "http://localhost:8000";
+
+    // The system prompt tells the model how to behave.
+    // A well-crafted system prompt is more reliable than fine-tuning for demos.
+    const SYSTEM_PROMPT = `You are NeuroCompass, an AI wellness assistant specializing
+in detecting behavioral drift — gradual, unnoticed changes in daily patterns like
+sleep, energy, focus, and routine. When a user describes their patterns:
+1. Identify specific drifts with clear language.
+2. Explain why the drift matters for cognitive health.
+3. Provide 2–3 concrete, actionable recommendations.
+Keep responses concise (under 200 words) and avoid medical diagnoses.`;
+
+    // =========================================================================
+    // DOM references
+    // =========================================================================
+    const messagesEl  = document.getElementById("messages");
+    const userInputEl = document.getElementById("userInput");
+    const sendBtnEl   = document.getElementById("sendBtn");
+    const statusDotEl = document.getElementById("statusDot");
+    const statusTextEl = document.getElementById("statusText");
+
+    // Conversation history sent to the model on every request.
+    // The API is stateless, so we maintain history on the client.
+    let conversationHistory = [];
+
+    // =========================================================================
+    // Utility — append a message bubble to the chat
+    // =========================================================================
+    function appendMessage(role, content) {
+      const div = document.createElement("div");
+      div.classList.add("message", role);
+      div.textContent = content;
+      messagesEl.appendChild(div);
+      // Scroll to the newest message automatically
+      div.scrollIntoView({ behavior: "smooth", block: "end" });
+      return div;
+    }
+
+    // =========================================================================
+    // Loading indicator — shown while waiting for the model
+    // =========================================================================
+    function showLoading() {
+      const el = document.createElement("div");
+      el.classList.add("loading");
+      el.id = "loadingIndicator";
+      el.setAttribute("aria-label", "Model is generating a response");
+      // Three animated dots give clear visual feedback that work is happening
+      el.innerHTML = "<span></span><span></span><span></span>";
+      messagesEl.appendChild(el);
+      el.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+
+    function hideLoading() {
+      const el = document.getElementById("loadingIndicator");
+      if (el) el.remove();
+    }
+
+    // =========================================================================
+    // Connection health check
+    // Pings the NIM /v1/models endpoint on page load to tell the user whether
+    // the model is reachable before they try to send a message.
+    // =========================================================================
+    async function checkConnection() {
+      try {
+        const res = await fetch(`${API_BASE}/v1/models`, { signal: AbortSignal.timeout(5000) });
+        if (res.ok) {
+          statusDotEl.className = "status-dot online";
+          statusTextEl.textContent = "Model online · " + API_BASE;
+        } else {
+          throw new Error(`HTTP ${res.status}`);
+        }
+      } catch {
+        statusDotEl.className = "status-dot offline";
+        statusTextEl.textContent =
+          "Model offline — run: kubectl port-forward service/nim-llm 8000:8000";
+      }
+    }
+
+    // =========================================================================
+    // Send a message to NVIDIA NIM
+    // =========================================================================
+    async function sendMessage() {
+      const userText = userInputEl.value.trim();
+      if (!userText) return; // Do nothing if the input is empty
+
+      // Disable the input while waiting to prevent duplicate sends
+      sendBtnEl.disabled = true;
+      userInputEl.disabled = true;
+      userInputEl.value = "";
+
+      // Show the user's message in the chat
+      appendMessage("user", userText);
+
+      // Add the user message to the conversation history.
+      // The API expects an array of { role, content } objects representing
+      // the full conversation. This is how the model maintains context.
+      conversationHistory.push({ role: "user", content: userText });
+
+      showLoading();
+
+      try {
+        // ---------------------------------------------------------------
+        // POST /v1/chat/completions — OpenAI-compatible endpoint
+        // NIM exposes exactly the same API shape as the OpenAI API, so any
+        // code written for OpenAI works here without changes.
+        // ---------------------------------------------------------------
+        const response = await fetch(`${API_BASE}/v1/chat/completions`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "meta/llama3-8b-instruct",
+            messages: [
+              { role: "system", content: SYSTEM_PROMPT },
+              ...conversationHistory    // full history for multi-turn context
+            ],
+            max_tokens: 300,            // cap response length for demo clarity
+            temperature: 0.7,           // 0 = deterministic, 1 = more creative
+          }),
+          signal: AbortSignal.timeout(60000)  // 60-second timeout
+        });
+
+        hideLoading();
+
+        // ---------------------------------------------------------------
+        // Error handling — surface problems with friendly messages
+        // ---------------------------------------------------------------
+        if (!response.ok) {
+          let detail = `The model returned an error (HTTP ${response.status}).`;
+          if (response.status === 503) {
+            detail = "The model is still loading. This can take up to 10 minutes on first start. Please wait and try again.";
+          } else if (response.status === 429) {
+            detail = "Too many requests. Please wait a moment before sending another message.";
+          }
+          appendMessage("error", "⚠️ " + detail);
+          // Remove the failed user message from history so it does not
+          // corrupt the conversation context on the next attempt.
+          conversationHistory.pop();
+          return;
+        }
+
+        const data = await response.json();
+        const assistantText = data.choices?.[0]?.message?.content?.trim();
+
+        if (!assistantText) {
+          appendMessage("error", "⚠️ The model returned an empty response. Please try again.");
+          conversationHistory.pop();
+          return;
+        }
+
+        // Add the assistant reply to history so subsequent messages have context
+        conversationHistory.push({ role: "assistant", content: assistantText });
+        appendMessage("assistant", assistantText);
+
+        // Update status to confirm the model is responding
+        statusDotEl.className = "status-dot online";
+        statusTextEl.textContent = "Model online · " + API_BASE;
+
+      } catch (err) {
+        hideLoading();
+
+        // Network errors (model not running, port-forward dropped, etc.)
+        let friendlyMessage = "Could not reach the model.";
+        if (err.name === "TimeoutError") {
+          friendlyMessage = "The request timed out after 60 seconds. The model may be compiling (TensorRT optimisation takes a few minutes on first start). Please wait and try again.";
+        } else if (err.name === "TypeError") {
+          friendlyMessage = "Network error — is kubectl port-forward running? Run: kubectl port-forward service/nim-llm 8000:8000";
+        }
+        appendMessage("error", "⚠️ " + friendlyMessage);
+        conversationHistory.pop();
+
+        statusDotEl.className = "status-dot offline";
+        statusTextEl.textContent = "Model offline — check port-forward";
+      } finally {
+        // Always re-enable input so the user can try again
+        sendBtnEl.disabled = false;
+        userInputEl.disabled = false;
+        userInputEl.focus();
+      }
+    }
+
+    // =========================================================================
+    // Event listeners
+    // =========================================================================
+
+    sendBtnEl.addEventListener("click", sendMessage);
+
+    // Allow Shift+Enter for a newline, plain Enter to send —
+    // this matches the behaviour users expect from chat applications.
+    userInputEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // Auto-resize the textarea as the user types so long messages are visible
+    userInputEl.addEventListener("input", () => {
+      userInputEl.style.height = "auto";
+      userInputEl.style.height = Math.min(userInputEl.scrollHeight, 200) + "px";
+    });
+
+    // =========================================================================
+    // Initialisation
+    // =========================================================================
+    checkConnection();   // Check model availability when the page loads
+    userInputEl.focus(); // Put focus in the input box immediately
+  </script>
+</body>
+</html>
