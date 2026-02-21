@@ -1,0 +1,2067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NeuroCompass — Learn How It Works! 🚀</title>
+  <style>
+    /* -----------------------------------------------------------------------
+       Base reset and fun typography
+    ----------------------------------------------------------------------- */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:   #76d400;
+      --blue:    #3b82f6;
+      --purple:  #8b5cf6;
+      --orange:  #f97316;
+      --pink:    #ec4899;
+      --yellow:  #fbbf24;
+      --bg:      #0d0f1a;
+      --card:    #161928;
+      --border:  #1e2845;
+      --text:    #e2e8f0;
+      --muted:   #8fa3bf;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* -----------------------------------------------------------------------
+       Utility classes
+    ----------------------------------------------------------------------- */
+    .center { text-align: center; }
+    .bold   { font-weight: 700; }
+    .hidden { display: none !important; }
+
+    /* -----------------------------------------------------------------------
+       Animated starfield background
+    ----------------------------------------------------------------------- */
+    #stars {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .star {
+      position: absolute;
+      border-radius: 50%;
+      background: white;
+      animation: twinkle var(--dur, 3s) ease-in-out infinite;
+      opacity: 0;
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 0; transform: scale(0.8); }
+      50%       { opacity: var(--max-op, 0.6); transform: scale(1.2); }
+    }
+
+    /* -----------------------------------------------------------------------
+       Page wrapper
+    ----------------------------------------------------------------------- */
+    .page { position: relative; z-index: 1; }
+
+    /* -----------------------------------------------------------------------
+       HERO SECTION
+    ----------------------------------------------------------------------- */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+      text-align: center;
+      position: relative;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: rgba(118, 212, 0, 0.15);
+      border: 1px solid rgba(118, 212, 0, 0.4);
+      color: var(--green);
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 6px 16px;
+      border-radius: 100px;
+      margin-bottom: 24px;
+      animation: fadeDown 0.6s ease both;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 8vw, 5rem);
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 16px;
+      animation: fadeDown 0.7s ease both;
+    }
+
+    .hero h1 .gradient {
+      background: linear-gradient(135deg, var(--green) 0%, var(--blue) 50%, var(--purple) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p.tagline {
+      font-size: clamp(1rem, 3vw, 1.35rem);
+      color: var(--muted);
+      max-width: 580px;
+      line-height: 1.7;
+      margin-bottom: 40px;
+      animation: fadeDown 0.8s ease both;
+    }
+
+    .hero-mascot {
+      font-size: clamp(4rem, 12vw, 8rem);
+      animation: float 3s ease-in-out infinite;
+      display: block;
+      margin-bottom: 24px;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-16px); }
+    }
+
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 100px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: transform 0.15s, box-shadow 0.15s;
+      text-decoration: none;
+    }
+
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+    .btn:active { transform: translateY(0); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--green), #4ade80);
+      color: #0d0f1a;
+      animation: fadeDown 0.9s ease both;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 2px solid var(--border);
+      color: var(--muted);
+    }
+
+    .btn-secondary:hover { border-color: var(--green); color: var(--green); }
+
+    .hero-buttons {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 48px;
+      animation: fadeDown 0.9s ease both;
+    }
+
+    .scroll-hint {
+      position: absolute;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 0.75rem;
+      animation: bounce-arrow 2s ease-in-out infinite;
+    }
+
+    @keyframes bounce-arrow {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50%       { transform: translateX(-50%) translateY(8px); }
+    }
+
+    /* -----------------------------------------------------------------------
+       SECTION TITLES
+    ----------------------------------------------------------------------- */
+    .section {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 80px 24px;
+    }
+
+    .section-title {
+      font-size: clamp(1.6rem, 5vw, 2.6rem);
+      font-weight: 900;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    .section-sub {
+      color: var(--muted);
+      text-align: center;
+      font-size: 1rem;
+      line-height: 1.7;
+      max-width: 560px;
+      margin: 0 auto 56px;
+    }
+
+    /* -----------------------------------------------------------------------
+       JOURNEY STEPS / LESSON CARDS
+    ----------------------------------------------------------------------- */
+    .journey {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      position: relative;
+    }
+
+    .journey::before {
+      content: '';
+      position: absolute;
+      left: 40px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(180deg, var(--green), var(--blue), var(--purple), var(--orange), var(--pink));
+      border-radius: 2px;
+    }
+
+    @media (max-width: 600px) {
+      .journey::before { left: 20px; }
+    }
+
+    .step {
+      display: flex;
+      gap: 32px;
+      padding: 0 0 60px;
+      align-items: flex-start;
+      cursor: pointer;
+    }
+
+    @media (max-width: 600px) {
+      .step { gap: 16px; }
+    }
+
+    .step-icon {
+      flex-shrink: 0;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      border: 3px solid var(--border);
+      background: var(--card);
+      transition: transform 0.3s, box-shadow 0.3s;
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (max-width: 600px) {
+      .step-icon { width: 48px; height: 48px; font-size: 1.2rem; }
+    }
+
+    .step:hover .step-icon,
+    .step.active .step-icon {
+      transform: scale(1.1);
+    }
+
+    .step[data-color="green"]  .step-icon { border-color: var(--green);  box-shadow: 0 0 20px rgba(118,212,0,0.3); }
+    .step[data-color="blue"]   .step-icon { border-color: var(--blue);   box-shadow: 0 0 20px rgba(59,130,246,0.3); }
+    .step[data-color="purple"] .step-icon { border-color: var(--purple); box-shadow: 0 0 20px rgba(139,92,246,0.3); }
+    .step[data-color="orange"] .step-icon { border-color: var(--orange); box-shadow: 0 0 20px rgba(249,115,22,0.3); }
+    .step[data-color="pink"]   .step-icon { border-color: var(--pink);   box-shadow: 0 0 20px rgba(236,72,153,0.3); }
+
+    .step-body { flex: 1; }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .step-number {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 100px;
+      opacity: 0.85;
+    }
+
+    .step[data-color="green"]  .step-number { background: rgba(118,212,0,0.15);  color: var(--green);  }
+    .step[data-color="blue"]   .step-number { background: rgba(59,130,246,0.15); color: var(--blue);   }
+    .step[data-color="purple"] .step-number { background: rgba(139,92,246,0.15); color: var(--purple); }
+    .step[data-color="orange"] .step-number { background: rgba(249,115,22,0.15); color: var(--orange); }
+    .step[data-color="pink"]   .step-number { background: rgba(236,72,153,0.15); color: var(--pink);   }
+
+    .step-title {
+      font-size: 1.4rem;
+      font-weight: 800;
+    }
+
+    .step-tagline {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-bottom: 16px;
+      line-height: 1.6;
+    }
+
+    .step-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      max-height: 0;
+      opacity: 0;
+      transition: max-height 0.5s ease, opacity 0.4s ease, border-color 0.3s;
+    }
+
+    .step.active .step-card {
+      max-height: 1000px;
+      opacity: 1;
+    }
+
+    .step[data-color="green"].active  .step-card { border-color: rgba(118,212,0,0.3);  }
+    .step[data-color="blue"].active   .step-card { border-color: rgba(59,130,246,0.3); }
+    .step[data-color="purple"].active .step-card { border-color: rgba(139,92,246,0.3); }
+    .step[data-color="orange"].active .step-card { border-color: rgba(249,115,22,0.3); }
+    .step[data-color="pink"].active   .step-card { border-color: rgba(236,72,153,0.3); }
+
+    .step-card-inner { padding: 28px; }
+
+    .analogy-box {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 20px;
+    }
+
+    .analogy-emoji { font-size: 2.5rem; flex-shrink: 0; }
+
+    .analogy-text h4 {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--yellow);
+      margin-bottom: 6px;
+    }
+
+    .analogy-text p { font-size: 0.95rem; line-height: 1.7; color: var(--muted); }
+    .analogy-text p strong { color: var(--text); }
+
+    .facts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .fact-chip {
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+
+    .fact-chip .fact-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      opacity: 0.6;
+      margin-bottom: 4px;
+    }
+
+    /* Mini visual diagrams inside each lesson */
+    .diagram {
+      background: rgba(0,0,0,0.3);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* GPU cores grid */
+    .gpu-grid {
+      display: grid;
+      grid-template-columns: repeat(16, 1fr);
+      gap: 3px;
+    }
+
+    .gpu-core {
+      aspect-ratio: 1;
+      border-radius: 2px;
+      background: #2a3050;
+      animation: core-flash var(--delay, 1s) ease-in-out infinite;
+    }
+
+    @keyframes core-flash {
+      0%, 100% { background: #2a3050; }
+      50%       { background: var(--green); box-shadow: 0 0 4px var(--green); }
+    }
+
+    /* Data packets animation */
+    .data-lane {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 6px 0;
+      overflow: hidden;
+    }
+
+    .data-lane-label {
+      font-size: 0.7rem;
+      color: var(--muted);
+      width: 70px;
+      flex-shrink: 0;
+    }
+
+    .data-track {
+      flex: 1;
+      height: 24px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 100px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .data-packet {
+      position: absolute;
+      top: 4px;
+      height: 16px;
+      border-radius: 100px;
+      animation: slide-packet var(--speed, 2s) linear infinite;
+      animation-delay: var(--delay, 0s);
+    }
+
+    @keyframes slide-packet {
+      from { left: -30%; width: 25%; }
+      to   { left: 110%; width: 25%; }
+    }
+
+    /* Kubernetes pods */
+    .k8s-cluster {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .k8s-pod {
+      background: rgba(139,92,246,0.15);
+      border: 1px solid rgba(139,92,246,0.4);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 0.75rem;
+      color: var(--purple);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.3s;
+    }
+
+    .k8s-pod:hover { background: rgba(139,92,246,0.3); }
+
+    .k8s-pod.gpu { border-color: rgba(118,212,0,0.5); color: var(--green); background: rgba(118,212,0,0.1); }
+
+    .pod-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      animation: pod-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pod-pulse {
+      0%, 100% { opacity: 0.5; transform: scale(0.9); }
+      50%       { opacity: 1;   transform: scale(1.1); }
+    }
+
+    /* NIM brain animation */
+    .brain-ring {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      border-top-color: var(--orange);
+      animation: spin 1.5s linear infinite;
+      margin: 0 auto 12px;
+      position: relative;
+    }
+
+    .brain-ring::after {
+      content: '🧠';
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      animation: counter-spin 1.5s linear infinite;
+    }
+
+    @keyframes spin         { to { transform: rotate(360deg); } }
+    @keyframes counter-spin { to { transform: rotate(-360deg); } }
+
+    /* -----------------------------------------------------------------------
+       PROGRESS BAR + STEP TRACKER
+    ----------------------------------------------------------------------- */
+    .progress-bar-wrap {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(13,15,26,0.9);
+      backdrop-filter: blur(12px);
+      padding: 12px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .progress-inner {
+      max-width: 600px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .progress-label { font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+
+    .progress-track {
+      flex: 1;
+      height: 6px;
+      background: var(--border);
+      border-radius: 100px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--green), var(--blue));
+      border-radius: 100px;
+      transition: width 0.5s ease;
+      width: 0%;
+    }
+
+    .progress-pct {
+      font-size: 0.8rem;
+      color: var(--green);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    /* -----------------------------------------------------------------------
+       FULL DATA FLOW VISUALIZER
+    ----------------------------------------------------------------------- */
+    .flow-viz {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 36px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .flow-nodes {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      align-items: center;
+    }
+
+    .flow-node {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 24px;
+      width: 100%;
+      max-width: 480px;
+      transition: border-color 0.4s, background 0.4s, box-shadow 0.4s;
+      position: relative;
+      z-index: 1;
+    }
+
+    .flow-node.lit-green  { border-color: var(--green);  background: rgba(118,212,0,0.08);  box-shadow: 0 0 20px rgba(118,212,0,0.15);  }
+    .flow-node.lit-blue   { border-color: var(--blue);   background: rgba(59,130,246,0.08);  box-shadow: 0 0 20px rgba(59,130,246,0.15); }
+    .flow-node.lit-purple { border-color: var(--purple); background: rgba(139,92,246,0.08);  box-shadow: 0 0 20px rgba(139,92,246,0.15);}
+    .flow-node.lit-orange { border-color: var(--orange); background: rgba(249,115,22,0.08);  box-shadow: 0 0 20px rgba(249,115,22,0.15);}
+    .flow-node.lit-pink   { border-color: var(--pink);   background: rgba(236,72,153,0.08);  box-shadow: 0 0 20px rgba(236,72,153,0.15);}
+
+    .flow-node-emoji { font-size: 2rem; flex-shrink: 0; }
+
+    .flow-node-info h4 { font-size: 1rem; font-weight: 700; margin-bottom: 2px; }
+    .flow-node-info p  { font-size: 0.8rem; color: var(--muted); }
+
+    .flow-arrow {
+      font-size: 1.5rem;
+      color: var(--muted);
+      margin: 4px 0;
+      transition: color 0.4s;
+    }
+
+    .flow-arrow.lit { color: var(--green); animation: arrow-pulse 0.5s ease; }
+    @keyframes arrow-pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.4); } }
+
+    .flow-btn-row {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 28px;
+      flex-wrap: wrap;
+    }
+
+    /* -----------------------------------------------------------------------
+       QUIZ SECTION
+    ----------------------------------------------------------------------- */
+    .quiz-section { background: rgba(255,255,255,0.02); }
+
+    .quiz-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 36px;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .quiz-question-text {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .quiz-hint {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 24px;
+    }
+
+    .quiz-options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .quiz-option {
+      background: rgba(255,255,255,0.04);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 20px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s, transform 0.1s;
+      text-align: left;
+      font-size: 0.95rem;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .quiz-option:hover:not(:disabled) {
+      border-color: var(--blue);
+      background: rgba(59,130,246,0.08);
+      transform: translateX(4px);
+    }
+
+    .quiz-option:disabled { cursor: not-allowed; }
+
+    .quiz-option.correct {
+      border-color: var(--green) !important;
+      background: rgba(118,212,0,0.12) !important;
+    }
+
+    .quiz-option.wrong {
+      border-color: #ef4444 !important;
+      background: rgba(239,68,68,0.12) !important;
+    }
+
+    .quiz-option-letter {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+
+    .quiz-feedback {
+      font-size: 1rem;
+      padding: 14px 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .quiz-feedback.show { display: block; }
+
+    .quiz-feedback.correct {
+      background: rgba(118,212,0,0.12);
+      border: 1px solid var(--green);
+      color: var(--green);
+    }
+
+    .quiz-feedback.wrong {
+      background: rgba(239,68,68,0.12);
+      border: 1px solid #ef4444;
+      color: #f87171;
+    }
+
+    .quiz-progress {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .quiz-score-dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .score-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: background 0.3s;
+    }
+
+    .score-dot.correct { background: var(--green); }
+    .score-dot.wrong   { background: #ef4444; }
+
+    .quiz-result {
+      text-align: center;
+      padding: 20px;
+      display: none;
+    }
+
+    .quiz-result.show { display: block; }
+
+    .quiz-result-emoji { font-size: 4rem; margin-bottom: 12px; display: block; }
+
+    .quiz-result h3 { font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; }
+    .quiz-result p  { color: var(--muted); font-size: 0.95rem; margin-bottom: 20px; }
+
+    /* -----------------------------------------------------------------------
+       TRY IT YOURSELF section
+    ----------------------------------------------------------------------- */
+    .prompts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    .prompt-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.15s, box-shadow 0.15s;
+      text-decoration: none;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .prompt-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    .prompt-card[data-color="green"]:hover  { border-color: var(--green);  }
+    .prompt-card[data-color="blue"]:hover   { border-color: var(--blue);   }
+    .prompt-card[data-color="orange"]:hover { border-color: var(--orange); }
+    .prompt-card[data-color="pink"]:hover   { border-color: var(--pink);   }
+
+    .prompt-icon { font-size: 2rem; }
+
+    .prompt-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      opacity: 0.6;
+    }
+
+    .prompt-text {
+      font-size: 0.9rem;
+      font-style: italic;
+      color: var(--muted);
+      line-height: 1.6;
+      flex: 1;
+    }
+
+    .prompt-cta {
+      font-size: 0.8rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* -----------------------------------------------------------------------
+       FOOTER
+    ----------------------------------------------------------------------- */
+    footer {
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      padding: 40px 24px;
+      text-align: center;
+    }
+
+    .footer-logo { font-size: 1.5rem; font-weight: 900; margin-bottom: 8px; }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin: 16px 0;
+    }
+
+    .footer-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: var(--green); }
+
+    .footer-credit { font-size: 0.75rem; color: var(--muted); margin-top: 16px; }
+
+    /* -----------------------------------------------------------------------
+       TOAST notification
+    ----------------------------------------------------------------------- */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #1e2845;
+      border: 1px solid var(--green);
+      color: var(--green);
+      padding: 12px 24px;
+      border-radius: 100px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      z-index: 9999;
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      white-space: nowrap;
+    }
+
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* -----------------------------------------------------------------------
+       RESPONSIVE tweaks
+    ----------------------------------------------------------------------- */
+    @media (max-width: 500px) {
+      .step-card-inner { padding: 18px; }
+      .flow-viz { padding: 20px; }
+      .quiz-card { padding: 22px; }
+      .facts-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- =====================================================================
+       Starfield background
+  ====================================================================== -->
+  <div id="stars"></div>
+
+  <div class="page">
+
+    <!-- ===================================================================
+         STICKY PROGRESS BAR
+    =================================================================== -->
+    <div class="progress-bar-wrap" id="progressBar" style="display:none;">
+      <div class="progress-inner">
+        <span class="progress-label">Your progress</span>
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <span class="progress-pct" id="progressPct">0%</span>
+      </div>
+    </div>
+
+    <!-- ===================================================================
+         HERO
+    =================================================================== -->
+    <section class="hero" id="hero">
+      <span class="hero-mascot">🧭</span>
+      <div class="hero-badge">Interactive Learning Adventure</div>
+      <h1><span class="gradient">NeuroCompass</span><br>How does it work?</h1>
+      <p class="tagline">
+        Follow along step-by-step to discover how data travels from a cloud
+        storage bucket all the way to an AI that talks back to you — explained
+        so simply that anyone can understand it! 🚀
+      </p>
+      <div class="hero-buttons">
+        <a href="#journey" class="btn btn-primary">🎒 Start Learning!</a>
+        <a href="index.html" class="btn btn-secondary">💬 Try the Chat</a>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         WHAT IS NEUROCOMPASS?  (quick intro)
+    =================================================================== -->
+    <section class="section" id="intro">
+      <div class="section-title">What is NeuroCompass? 🤔</div>
+      <div class="section-sub">
+        Imagine you have a super-smart friend who watches your daily habits —
+        sleep, energy, focus — and warns you when something starts to go wrong.
+        That is NeuroCompass! It uses a giant AI brain running on a special
+        computer chip to spot those patterns and help you.
+      </div>
+
+      <!-- Quick "stats" chips -->
+      <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;">
+        <div style="background:rgba(118,212,0,0.1);border:1px solid rgba(118,212,0,0.3);border-radius:100px;padding:10px 20px;font-size:0.9rem;color:var(--green);font-weight:700;">⚡ 100× faster with GPU</div>
+        <div style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:100px;padding:10px 20px;font-size:0.9rem;color:var(--blue);font-weight:700;">☁️ Lives in the Cloud</div>
+        <div style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);border-radius:100px;padding:10px 20px;font-size:0.9rem;color:var(--purple);font-weight:700;">🤖 Powered by Llama 3 AI</div>
+        <div style="background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:100px;padding:10px 20px;font-size:0.9rem;color:var(--orange);font-weight:700;">🛡️ Kubernetes protected</div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         JOURNEY — 5 LESSONS
+    =================================================================== -->
+    <section class="section" id="journey">
+      <div class="section-title">The 5-Step Journey 🗺️</div>
+      <div class="section-sub">
+        Click on each step to open the lesson. Read it, then move to the next one!
+      </div>
+
+      <div class="journey" id="journeySteps">
+
+        <!-- ── LESSON 1: DATA STORAGE ── -->
+        <div class="step" data-color="green" data-step="1" onclick="toggleStep(this)">
+          <div class="step-icon">🗂️</div>
+          <div class="step-body">
+            <div class="step-header">
+              <span class="step-number">Step 1</span>
+              <span style="color:var(--muted);font-size:0.8rem;">click to open ▾</span>
+            </div>
+            <div class="step-title">Storing the Data</div>
+            <div class="step-tagline">Where does all the information live before the AI sees it?</div>
+            <div class="step-card">
+              <div class="step-card-inner">
+
+                <!-- Analogy -->
+                <div class="analogy-box">
+                  <div class="analogy-emoji">📚</div>
+                  <div class="analogy-text">
+                    <h4>🌟 Think of it like this</h4>
+                    <p>
+                      Imagine a <strong>magic library</strong> in the cloud where every book
+                      (your health data) is stored in a super-smart way.
+                      Instead of reading each book from page 1, you can jump <em>straight</em>
+                      to the exact chapter you need — saving tons of time!
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Diagram: CSV vs Parquet -->
+                <div class="diagram">
+                  <p style="font-size:0.75rem;color:var(--muted);margin-bottom:12px;text-align:center;">
+                    📦 Parquet reads only the columns you need (much faster than CSV!)
+                  </p>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div>
+                      <p style="font-size:0.7rem;color:var(--muted);margin-bottom:6px;text-align:center;">Old way (CSV) 🐢</p>
+                      <div style="border:1px solid #444;border-radius:8px;overflow:hidden;font-size:0.65rem;">
+                        <div style="background:#2a2a2a;padding:6px 8px;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">
+                          <span style="color:#aaa;">Name</span><span style="color:#aaa;">Sleep</span><span style="color:#aaa;">Energy</span><span style="color:#aaa;">Focus</span>
+                        </div>
+                        <div id="csvRows" style="padding:6px 8px;"></div>
+                      </div>
+                      <p style="font-size:0.65rem;color:#ef4444;margin-top:4px;text-align:center;">Reads ALL columns 😩</p>
+                    </div>
+                    <div>
+                      <p style="font-size:0.7rem;color:var(--muted);margin-bottom:6px;text-align:center;">Parquet 🚀</p>
+                      <div style="border:1px solid rgba(118,212,0,0.3);border-radius:8px;overflow:hidden;font-size:0.65rem;">
+                        <div style="background:rgba(118,212,0,0.08);padding:6px 8px;">
+                          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+                            <span style="background:var(--green);color:#000;border-radius:4px;padding:2px 6px;font-weight:700;">Sleep</span>
+                            <span style="color:var(--green);">← only this!</span>
+                          </div>
+                          <div id="parquetCol" style="display:flex;flex-direction:column;gap:3px;"></div>
+                        </div>
+                      </div>
+                      <p style="font-size:0.65rem;color:var(--green);margin-top:4px;text-align:center;">Reads ONE column ✅</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Key facts -->
+                <div class="facts-grid">
+                  <div class="fact-chip">
+                    <div class="fact-label">🏷️ Format</div>
+                    <strong>Apache Parquet</strong> — stores data in columns, not rows
+                  </div>
+                  <div class="fact-chip">
+                    <div class="fact-label">🏠 Where</div>
+                    <strong>Google Cloud Storage</strong> — like Google Drive but for huge data files
+                  </div>
+                  <div class="fact-chip">
+                    <div class="fact-label">⚡ Speed boost</div>
+                    Reading 1 of 50 columns is <strong>~50× faster</strong> with Parquet
+                  </div>
+                  <div class="fact-chip">
+                    <div class="fact-label">💾 Space saving</div>
+                    Parquet also <strong>compresses</strong> the data — like zipping a file!
+                  </div>
+                </div>
+
+                <div style="background:rgba(118,212,0,0.08);border:1px solid rgba(118,212,0,0.2);border-radius:10px;padding:14px;font-size:0.85rem;color:var(--muted);">
+                  🔑 <strong style="color:var(--text);">Key idea:</strong>
+                  The smarter you store data, the faster you can read it later.
+                  Parquet is like organizing your toy box so you can find any toy instantly!
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── LESSON 2: GPU PROCESSING ── -->
+        <div class="step" data-color="blue" data-step="2" onclick="toggleStep(this)">
+          <div class="step-icon">⚡</div>
+          <div class="step-body">
+            <div class="step-header">
+              <span class="step-number">Step 2</span>
+              <span style="color:var(--muted);font-size:0.8rem;">click to open ▾</span>
+            </div>
+            <div class="step-title">Superfast GPU Processing</div>
+            <div class="step-tagline">How do we crunch millions of numbers in milliseconds?</div>
+            <div class="step-card">
+              <div class="step-card-inner">
+
+                <div class="analogy-box">
+                  <div class="analogy-emoji">🧮</div>
+                  <div class="analogy-text">
+                    <h4>🌟 Think of it like this</h4>
+                    <p>
+                      Your regular computer processor (CPU) is like <strong>1 super-genius mathematician</strong>
+                      solving problems one at a time. A GPU is like having
+                      <strong>thousands of helpers</strong> all solving different parts of the
+                      problem at the same exact moment — incredibly fast!
+                    </p>
+                  </div>
+                </div>
+
+                <!-- GPU cores animation -->
+                <div class="diagram">
+                  <p style="font-size:0.75rem;color:var(--muted);margin-bottom:10px;text-align:center;">
+                    🔵 Each little square = one GPU core working right now!
+                  </p>
+                  <div class="gpu-grid" id="gpuGrid"></div>
+                  <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:0.7rem;color:var(--muted);">
+                    <span>CPU: 8 cores</span>
+                    <span style="color:var(--green);">GPU: 9,000+ cores ⚡</span>
+                  </div>
+                </div>
+
+                <div class="facts-grid">
+                  <div class="fact-chip">
+                    <div class="fact-label">🛠️ Tool used</div>
+                    <strong>cuDF</strong> — pandas but on the GPU (looks the same, runs 100× faster)
+                  </div>
+                  <div class="fact-chip">
+                    <div class="fact-label">🧱 What it does</div>
+                    Reads your Parquet data and <strong>cleans + analyzes</strong> millions of rows
+                  </div>
+                  <div class="fact-chip">
+                    <div class="fact-label">⏱️ Speed example</div>
+                    A 45-second CPU calculation becomes <strong>0.4 seconds</strong> on the GPU!
+                  </div>
+                  <div class="fact-chip">
+                    <div class="fact-label">🛡️ Safety feature</div>
+                    <strong>UVM</strong> (Unified Virtual Memory) means it won't crash if the data is too big
+                  </div>
+                </div>
+
+                <!-- Data packets animation -->
+                <div class="diagram" style="margin-bottom:20px;">
+                  <p style="font-size:0.75rem;color:var(--muted);margin-bottom:10px;text-align:center;">
+                    📊 Data flowing from storage into the GPU right now!
+                  </p>
+                  <div class="data-lane">
+                    <span class="data-lane-label">Sleep data</span>
+                    <div class="data-track">
+                      <div class="data-packet" style="background:var(--blue);--speed:1.8s;--delay:0s;"></div>
+                      <div class="data-packet" style="background:var(--blue);--speed:1.8s;--delay:0.6s;"></div>
+                      <div class="data-packet" style="background:var(--blue);--speed:1.8s;--delay:1.2s;"></div>
+                    </div>
+                  </div>
+                  <div class="data-lane">
+                    <span class="data-lane-label">Energy data</span>
+                    <div class="data-track">
+                      <div class="data-packet" style="background:var(--yellow);--speed:2.2s;--delay:0.3s;"></div>
+                      <div class="data-packet" style="background:var(--yellow);--speed:2.2s;--delay:1s;"></div>
+                    </div>
+                  </div>
+                  <div class="data-lane">
+                    <span class="data-lane-label">Focus data</span>
+                    <div class="data-track">
+                      <div class="data-packet" style="background:var(--green);--speed:1.5s;--delay:0.1s;"></div>
+                      <div class="data-packet" style="background:var(--green);--speed:1.5s;--delay:0.75s;"></div>
+                      <div class="data-packet" style="background:var(--green);--speed:1.5s;--delay:1.4s;"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:10px;padding:14px;font-size:0.85rem;color:var(--muted);">
+                  🔑 <strong style="color:var(--text);">Key idea:</strong>
+                  GPUs were invented for video games (to draw millions of pixels at once),
+                  but scientists realized they are also perfect for AI math! 🎮 → 🤖
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── LESSON 3: KUBERNETES ── -->
+        <div class="step" data-color="purple" data-step="3" onclick="toggleStep(this)">
+          <div class="step-icon">🏗️</div>
+          <div class="step-body">
+            <div class="step-header">
+              <span class="step-number">Step 3</span>
+              <span style="color:var(--muted);font-size:0.8rem;">click to open ▾</span>
+            </div>
+            <div class="step-title">The Kubernetes Kitchen</div>
+            <div class="step-tagline">How do we keep the AI running safely in the cloud?</div>
+            <div class="step-card">
+              <div class="step-card-inner">
+
+                <div class="analogy-box">
+                  <div class="analogy-emoji">🍳</div>
+                  <div class="analogy-text">
+                    <h4>🌟 Think of it like this</h4>
+                    <p>
+                      Kubernetes is like a <strong>restaurant kitchen manager</strong>.
+                      The manager knows exactly which chef (computer) is busy and which
+                      is free. If a chef gets sick (a computer breaks), the manager
+                      immediately sends another chef to take over — so food
+                      (your AI responses) keeps coming without any interruption!
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Kubernetes cluster visualization -->
+                <div class="diagram">
+                  <p style="font-size:0.75rem;color:var(--muted);margin-bottom:12px;text-align:center;">
+                    🖥️ Inside our Google Cloud cluster — everything running right now
+                  </p>
+                  <div class="k8s-cluster" id="k8sCluster">
+                    <div class="k8s-pod"><div class="pod-dot"></div>kube-dns</div>
+                    <div class="k8s-pod"><div class="pod-dot"></div>metrics-server</div>
+                    <div class="k8s-pod"><div class="pod-dot"></div>driver-installer</div>
+                    <div class="k8s-pod gpu"><div class="pod-dot"></div>🤖 NIM AI Pod (GPU!)</div>
+                    <div class="k8s-pod"><div class="pod-dot"></div>node-agent</div>
+                    <div class="k8s-pod"><div class="pod-dot"></div>log-collector</div>
+                  </div>
+                </div>
+
+                <div class="facts-grid">
+                  <div class="fact-chip">
+                    <div class="fact-label">🌍 Where</div>
+                    <strong>Google Cloud (GKE)</strong> — Google manages the cluster for us
+                  </div>
+                  <div class="fact-chip">
+                    <div class="fact-label">🔧 Set up with</div>
+                    Just <strong>one shell script</strong> — the computer does the rest!
+                  </div>
+                  <div class="fact-chip">
+                    <div class="fact-label">💰 Smart savings</div>
+                    The GPU node <strong>turns off automatically</strong> when not used (~$0.70/hr saved)
+                  </div>
+                  <div class="fact-chip">
+                    <div class="fact-label">📦 Helm</div>
+                    Like a <strong>vending machine</strong> for apps — pick what you want and it installs!
+                  </div>
+                </div>
+
+                <div style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.2);border-radius:10px;padding:14px;font-size:0.85rem;color:var(--muted);">
+                  🔑 <strong style="color:var(--text);">Key idea:</strong>
+                  Kubernetes was invented by Google engineers who needed to run thousands
+                  of websites at once — now anyone can use it! 🌐
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── LESSON 4: NVIDIA NIM / AI BRAIN ── -->
+        <div class="step" data-color="orange" data-step="4" onclick="toggleStep(this)">
+          <div class="step-icon">🧠</div>
+          <div class="step-body">
+            <div class="step-header">
+              <span class="step-number">Step 4</span>
+              <span style="color:var(--muted);font-size:0.8rem;">click to open ▾</span>
+            </div>
+            <div class="step-title">The AI Brain (NVIDIA NIM)</div>
+            <div class="step-tagline">Where does the smart, helpful advice actually come from?</div>
+            <div class="step-card">
+              <div class="step-card-inner">
+
+                <div class="analogy-box">
+                  <div class="analogy-emoji">📖</div>
+                  <div class="analogy-text">
+                    <h4>🌟 Think of it like this</h4>
+                    <p>
+                      The AI model (Llama 3) is like someone who has <strong>read billions of books</strong>
+                      and articles. NVIDIA NIM is like a <strong>special racing car</strong> that lets
+                      this genius run as fast as physically possible on a GPU —
+                      instead of slowly walking (regular computer), it zooms! 🏎️
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Brain spinning animation -->
+                <div class="diagram" style="text-align:center;">
+                  <div class="brain-ring"></div>
+                  <p style="font-size:0.75rem;color:var(--muted);">Llama 3 AI — optimized by TensorRT for max speed</p>
+
+                  <!-- Token counter animation -->
+                  <div style="margin-top:16px;display:flex;align-items:center;justify-content:center;gap:12px;">
+                    <div style="text-align:center;">
+                      <div id="tokenCounter" style="font-size:2rem;font-weight:900;color:var(--orange);">0</div>
+                      <div style="font-size:0.7rem;color:var(--muted);">tokens/second</div>
+                    </div>
+                    <div style="text-align:left;">
+                      <div style="font-size:0.75rem;color:var(--muted);">A <em>token</em> is roughly</div>
+                      <div style="font-size:0.75rem;color:var(--muted);">¾ of a word in English</div>
+                      <div style="font-size:0.75rem;color:var(--orange);">Llama 3 on L4 GPU 🚀</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="facts-grid">
+                  <div class="fact-chip">
+                    <div class="fact-label">🤖 The model</div>
+                    <strong>Llama 3 8B</strong> — made by Meta (Facebook's parent company), free to use!
+                  </div>
+                  <div class="fact-chip">
+                    <div class="fact-label">🔧 Speed booster</div>
+                    <strong>TensorRT</strong> — NVIDIA's compiler that makes the AI run up to 2× faster
+                  </div>
+                  <div class="fact-chip">
+                    <div class="fact-label">🔌 Works like OpenAI</div>
+                    The same API format as ChatGPT — any code that works with ChatGPT <strong>works here too!</strong>
+                  </div>
+                  <div class="fact-chip">
+                    <div class="fact-label">💾 Smart caching</div>
+                    Saves the compiled model so <strong>restarts are instant</strong> — no 10-min wait again
+                  </div>
+                </div>
+
+                <div style="background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:10px;padding:14px;font-size:0.85rem;color:var(--muted);">
+                  🔑 <strong style="color:var(--text);">Key idea:</strong>
+                  "8 Billion parameters" means the model has 8 billion little number
+                  dials it adjusts to give great answers. That's more connections
+                  than there are stars in the Milky Way! ⭐
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── LESSON 5: THE BROWSER FRONTEND ── -->
+        <div class="step" data-color="pink" data-step="5" onclick="toggleStep(this)">
+          <div class="step-icon">💬</div>
+          <div class="step-body">
+            <div class="step-header">
+              <span class="step-number">Step 5</span>
+              <span style="color:var(--muted);font-size:0.8rem;">click to open ▾</span>
+            </div>
+            <div class="step-title">Talking to the AI (The Browser)</div>
+            <div class="step-tagline">How does your question travel to the AI and come back?</div>
+            <div class="step-card">
+              <div class="step-card-inner">
+
+                <div class="analogy-box">
+                  <div class="analogy-emoji">📮</div>
+                  <div class="analogy-text">
+                    <h4>🌟 Think of it like this</h4>
+                    <p>
+                      The browser is like a <strong>super-fast post office</strong>.
+                      You write a letter (your question), it gets delivered to the AI brain
+                      through a secret tunnel (port-forward), the AI writes back, and the
+                      post office shows you the reply — all in under 2 seconds! 📬
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Message journey animation -->
+                <div class="diagram">
+                  <p style="font-size:0.75rem;color:var(--muted);margin-bottom:12px;text-align:center;">
+                    ✉️ Watch your message travel to the AI and come back!
+                  </p>
+                  <div id="msgJourney" style="display:flex;flex-direction:column;gap:8px;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <span style="font-size:1.2rem;">👤</span>
+                      <div style="flex:1;background:rgba(236,72,153,0.15);border:1px solid rgba(236,72,153,0.3);border-radius:8px;padding:8px 12px;font-size:0.8rem;">
+                        <strong>You type:</strong> "I haven't slept well in a week…"
+                      </div>
+                    </div>
+                    <div style="text-align:center;font-size:1rem;color:var(--muted);">⬇️ HTTP POST (fancy word for "send message")</div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <span style="font-size:1.2rem;">🔀</span>
+                      <div style="flex:1;background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.2);border-radius:8px;padding:8px 12px;font-size:0.8rem;">
+                        <strong>Secret tunnel</strong> (kubectl port-forward) passes it along
+                      </div>
+                    </div>
+                    <div style="text-align:center;font-size:1rem;color:var(--muted);">⬇️ to the GPU cluster</div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <span style="font-size:1.2rem;">🧠</span>
+                      <div style="flex:1;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.2);border-radius:8px;padding:8px 12px;font-size:0.8rem;">
+                        <strong>AI thinks</strong> for ~1–2 seconds on the GPU, writes a response
+                      </div>
+                    </div>
+                    <div style="text-align:center;font-size:1rem;color:var(--muted);">⬆️ JSON response (a tidy package of text)</div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <span style="font-size:1.2rem;">✅</span>
+                      <div style="flex:1;background:rgba(118,212,0,0.1);border:1px solid rgba(118,212,0,0.2);border-radius:8px;padding:8px 12px;font-size:0.8rem;">
+                        <strong>Browser shows</strong> the reply in a chat bubble — done!
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="facts-grid">
+                  <div class="fact-chip">
+                    <div class="fact-label">📄 Built with</div>
+                    Just <strong>one HTML file</strong> — no apps to install, open in any browser
+                  </div>
+                  <div class="fact-chip">
+                    <div class="fact-label">💾 Memory</div>
+                    The browser <strong>remembers</strong> your whole conversation so the AI knows context
+                  </div>
+                  <div class="fact-chip">
+                    <div class="fact-label">🚦 Status dot</div>
+                    A green/red dot shows if the AI is <strong>online or offline</strong> instantly
+                  </div>
+                  <div class="fact-chip">
+                    <div class="fact-label">♿ Accessible</div>
+                    Works with <strong>screen readers</strong> so everyone can use it
+                  </div>
+                </div>
+
+                <div style="background:rgba(236,72,153,0.08);border:1px solid rgba(236,72,153,0.2);border-radius:10px;padding:14px;font-size:0.85rem;color:var(--muted);">
+                  🔑 <strong style="color:var(--text);">Key idea:</strong>
+                  The browser talks to the AI using the exact same format as ChatGPT!
+                  This is called an "OpenAI-compatible API" — like a universal language
+                  that all AI tools understand. 🌐
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /journey -->
+    </section>
+
+    <!-- ===================================================================
+         FULL DATA FLOW VISUALIZER
+    =================================================================== -->
+    <section class="section">
+      <div class="section-title">See it all together! 🎬</div>
+      <div class="section-sub">
+        Press the button below and watch your message travel through all 5 steps,
+        lighting up each part of the system as it goes!
+      </div>
+
+      <div class="flow-viz">
+        <div class="flow-nodes">
+          <div class="flow-node" id="fn-browser" data-lit="lit-pink">
+            <span class="flow-node-emoji">💬</span>
+            <div class="flow-node-info">
+              <h4>You (Browser)</h4>
+              <p>Type your question here. It travels as a JSON message.</p>
+            </div>
+          </div>
+          <div class="flow-arrow" id="fa-1">↓</div>
+          <div class="flow-node" id="fn-tunnel" data-lit="lit-purple">
+            <span class="flow-node-emoji">🔀</span>
+            <div class="flow-node-info">
+              <h4>Secret Tunnel (port-forward)</h4>
+              <p>A secure passage from your laptop to the Kubernetes cluster.</p>
+            </div>
+          </div>
+          <div class="flow-arrow" id="fa-2">↓</div>
+          <div class="flow-node" id="fn-k8s" data-lit="lit-purple">
+            <span class="flow-node-emoji">🏗️</span>
+            <div class="flow-node-info">
+              <h4>Kubernetes Cluster (GKE)</h4>
+              <p>Directs the request to the right AI pod on the GPU node.</p>
+            </div>
+          </div>
+          <div class="flow-arrow" id="fa-3">↓</div>
+          <div class="flow-node" id="fn-nim" data-lit="lit-orange">
+            <span class="flow-node-emoji">🧠</span>
+            <div class="flow-node-info">
+              <h4>NVIDIA NIM (Llama 3 AI)</h4>
+              <p>The AI brain reads your question and writes a thoughtful reply.</p>
+            </div>
+          </div>
+          <div class="flow-arrow" id="fa-4">↓</div>
+          <div class="flow-node" id="fn-response" data-lit="lit-green">
+            <span class="flow-node-emoji">✅</span>
+            <div class="flow-node-info">
+              <h4>Answer appears in your browser!</h4>
+              <p>The AI's reply travels back the same path and is displayed.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flow-btn-row">
+          <button class="btn btn-primary" id="animateFlowBtn" onclick="animateFlow()">
+            ▶ Animate the Journey!
+          </button>
+          <button class="btn btn-secondary" onclick="resetFlow()">
+            ↺ Reset
+          </button>
+        </div>
+
+        <p id="flowStatus" style="text-align:center;color:var(--muted);font-size:0.85rem;margin-top:16px;min-height:24px;"></p>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         QUIZ
+    =================================================================== -->
+    <section class="section quiz-section">
+      <div class="section-title">🎯 Quiz Time!</div>
+      <div class="section-sub">
+        Let's see how much you learned. Don't worry — you can always go back
+        and re-read the lessons!
+      </div>
+
+      <div class="quiz-card">
+        <div id="quizBody">
+          <div class="quiz-progress">
+            <span id="quizQuestionLabel">Question 1 of 5</span>
+            <div class="quiz-score-dots" id="scoreDots"></div>
+          </div>
+
+          <div class="quiz-question-text" id="quizQuestion"></div>
+          <div class="quiz-hint" id="quizHint"></div>
+          <div class="quiz-options" id="quizOptions"></div>
+          <div class="quiz-feedback" id="quizFeedback"></div>
+
+          <button class="btn btn-primary" id="nextQuizBtn" style="display:none;" onclick="nextQuestion()">
+            Next Question →
+          </button>
+        </div>
+
+        <div class="quiz-result" id="quizResult">
+          <span class="quiz-result-emoji" id="resultEmoji"></span>
+          <h3 id="resultTitle"></h3>
+          <p id="resultMsg"></p>
+          <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="restartQuiz()">🔄 Try Again</button>
+            <a href="index.html" class="btn btn-secondary">💬 Try the Chat</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         TRY IT YOURSELF
+    =================================================================== -->
+    <section class="section">
+      <div class="section-title">Try it Yourself! 🚀</div>
+      <div class="section-sub">
+        Once you have the system running, try sending these prompts to the AI.
+        Click a card to copy the prompt to your clipboard!
+      </div>
+
+      <div class="prompts-grid">
+        <div class="prompt-card" data-color="green" onclick="copyPrompt(this)">
+          <div class="prompt-icon">😴</div>
+          <div class="prompt-label">Sleep pattern</div>
+          <div class="prompt-text">"I have been sleeping only 4 hours a night for two weeks. My energy is really low. What should I do?"</div>
+          <div class="prompt-cta" style="color:var(--green);">📋 Copy prompt</div>
+        </div>
+        <div class="prompt-card" data-color="blue" onclick="copyPrompt(this)">
+          <div class="prompt-icon">🎮</div>
+          <div class="prompt-label">Screen time</div>
+          <div class="prompt-text">"I keep staying up late playing games and I can't focus in class anymore. Can you help me figure out what's changing?"</div>
+          <div class="prompt-cta" style="color:var(--blue);">📋 Copy prompt</div>
+        </div>
+        <div class="prompt-card" data-color="orange" onclick="copyPrompt(this)">
+          <div class="prompt-icon">🏃</div>
+          <div class="prompt-label">Exercise drift</div>
+          <div class="prompt-text">"I used to exercise every day but I've stopped for a month. I feel more stressed and less happy. What's happening?"</div>
+          <div class="prompt-cta" style="color:var(--orange);">📋 Copy prompt</div>
+        </div>
+        <div class="prompt-card" data-color="pink" onclick="copyPrompt(this)">
+          <div class="prompt-icon">📚</div>
+          <div class="prompt-label">Study habits</div>
+          <div class="prompt-text">"My study sessions have gotten shorter and shorter. I sit down to study but get distracted after 5 minutes. Help!"</div>
+          <div class="prompt-cta" style="color:var(--pink);">📋 Copy prompt</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         WHAT YOU NEED TO RUN IT  (kid-friendly setup guide)
+    =================================================================== -->
+    <section class="section">
+      <div class="section-title">What Do You Need? 🛠️</div>
+      <div class="section-sub">
+        Here are the ingredients to get NeuroCompass running on your own!
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;">
+
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;">
+          <div style="font-size:2rem;margin-bottom:12px;">☁️</div>
+          <h3 style="font-size:1rem;font-weight:700;margin-bottom:8px;">Google Cloud Account</h3>
+          <p style="font-size:0.85rem;color:var(--muted);line-height:1.6;">
+            Like signing up for Gmail but for big computers. You get $300 free credits to start!
+          </p>
+          <div style="margin-top:12px;font-size:0.75rem;background:rgba(118,212,0,0.1);border-radius:8px;padding:8px 12px;color:var(--green);">
+            🆓 Free trial available
+          </div>
+        </div>
+
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;">
+          <div style="font-size:2rem;margin-bottom:12px;">🔑</div>
+          <h3 style="font-size:1rem;font-weight:700;margin-bottom:8px;">NVIDIA NGC API Key</h3>
+          <p style="font-size:0.85rem;color:var(--muted);line-height:1.6;">
+            A free "password" from NVIDIA to download the AI model. Sign up at ngc.nvidia.com.
+          </p>
+          <div style="margin-top:12px;font-size:0.75rem;background:rgba(118,212,0,0.1);border-radius:8px;padding:8px 12px;color:var(--green);">
+            🆓 Free to get
+          </div>
+        </div>
+
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;">
+          <div style="font-size:2rem;margin-bottom:12px;">💻</div>
+          <h3 style="font-size:1rem;font-weight:700;margin-bottom:8px;">Command Line Tools</h3>
+          <p style="font-size:0.85rem;color:var(--muted);line-height:1.6;">
+            Install <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px;">gcloud</code>, <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px;">kubectl</code>, and <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px;">helm</code> on your computer — all free!
+          </p>
+          <div style="margin-top:12px;font-size:0.75rem;background:rgba(59,130,246,0.1);border-radius:8px;padding:8px 12px;color:var(--blue);">
+            📦 Free to install
+          </div>
+        </div>
+
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;">
+          <div style="font-size:2rem;margin-bottom:12px;">⚡</div>
+          <h3 style="font-size:1rem;font-weight:700;margin-bottom:8px;">4 Quick Commands</h3>
+          <p style="font-size:0.85rem;color:var(--muted);line-height:1.6;">
+            Clone the repo → run setup script → deploy NIM → open the browser. That's it!
+          </p>
+          <div style="margin-top:12px;font-size:0.75rem;background:rgba(249,115,22,0.1);border-radius:8px;padding:8px 12px;color:var(--orange);">
+            ⏱️ ~15 min total setup
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Step-by-step commands -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;margin-top:24px;">
+        <h3 style="font-size:1.1rem;font-weight:800;margin-bottom:20px;">📋 Quick Start Commands</h3>
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div style="display:flex;align-items:flex-start;gap:14px;">
+            <div style="background:rgba(118,212,0,0.2);color:var(--green);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;flex-shrink:0;margin-top:4px;">1</div>
+            <div>
+              <p style="font-weight:700;margin-bottom:4px;">Clone the project</p>
+              <code style="background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:0.8rem;display:block;color:#a5f3fc;">git clone https://github.com/zainkhan1994/goldenticket.git</code>
+              <!-- Update this URL if the repository is ever renamed or moved -->
+            </div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:14px;">
+            <div style="background:rgba(59,130,246,0.2);color:var(--blue);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;flex-shrink:0;margin-top:4px;">2</div>
+            <div>
+              <p style="font-weight:700;margin-bottom:4px;">Create the GPU cluster</p>
+              <code style="background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:0.8rem;display:block;color:#a5f3fc;">bash scripts/setup_gke.sh</code>
+            </div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:14px;">
+            <div style="background:rgba(249,115,22,0.2);color:var(--orange);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;flex-shrink:0;margin-top:4px;">3</div>
+            <div>
+              <p style="font-weight:700;margin-bottom:4px;">Deploy the AI model</p>
+              <code style="background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:0.8rem;display:block;color:#a5f3fc;">export NGC_API_KEY="your-key" && bash scripts/deploy_nim.sh</code>
+            </div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:14px;">
+            <div style="background:rgba(236,72,153,0.2);color:var(--pink);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;flex-shrink:0;margin-top:4px;">4</div>
+            <div>
+              <p style="font-weight:700;margin-bottom:4px;">Connect your browser to the AI</p>
+              <code style="background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:0.8rem;display:block;color:#a5f3fc;">kubectl port-forward service/nim-llm 8000:8000</code>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:16px;text-align:center;">
+          <a href="index.html" class="btn btn-primary" style="text-decoration:none;">
+            💬 Then open the Chat UI!
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         FOOTER
+    =================================================================== -->
+    <footer>
+      <div class="footer-logo">🧭 NeuroCompass</div>
+      <p style="color:var(--muted);font-size:0.85rem;max-width:400px;margin:0 auto;">
+        GPU-Accelerated Cognitive Drift Detection — built on Google Cloud, NVIDIA RAPIDS, and Llama 3.
+      </p>
+      <div class="footer-links">
+        <a href="index.html">💬 Chat UI</a>
+        <a href="../README.md">📖 README</a>
+        <a href="../docs/architecture.md">🏗️ Architecture</a>
+        <a href="../docs/glossary.md">📚 Glossary</a>
+        <a href="https://github.com/zainkhan1994/goldenticket" target="_blank" rel="noopener noreferrer">⭐ GitHub</a>
+      </div>
+      <div class="footer-credit">Built with ❤️ · Powered by NVIDIA NIM · Llama 3 · TensorRT · GKE</div>
+    </footer>
+
+  </div><!-- /page -->
+
+  <!-- Toast notification -->
+  <div id="toast">📋 Copied to clipboard!</div>
+
+  <script>
+    // =========================================================================
+    // Stars background
+    // =========================================================================
+    (function createStars() {
+      const container = document.getElementById('stars');
+      for (let i = 0; i < 120; i++) {
+        const s = document.createElement('div');
+        s.className = 'star';
+        const size = Math.random() * 2.5 + 0.5;
+        s.style.cssText = `
+          left: ${Math.random() * 100}%;
+          top: ${Math.random() * 100}%;
+          width: ${size}px;
+          height: ${size}px;
+          --dur: ${Math.random() * 4 + 2}s;
+          --max-op: ${Math.random() * 0.5 + 0.2};
+          animation-delay: ${Math.random() * 4}s;
+        `;
+        container.appendChild(s);
+      }
+    })();
+
+    // =========================================================================
+    // Progress bar (based on scroll position)
+    // =========================================================================
+    const progressBar = document.getElementById('progressBar');
+    const progressFill = document.getElementById('progressFill');
+    const progressPct  = document.getElementById('progressPct');
+
+    window.addEventListener('scroll', () => {
+      const scrollTop    = window.scrollY;
+      const docHeight    = document.documentElement.scrollHeight - window.innerHeight;
+      const pct          = Math.min(100, Math.round((scrollTop / docHeight) * 100));
+      progressFill.style.width = pct + '%';
+      progressPct.textContent  = pct + '%';
+
+      // Show progress bar after scrolling past hero
+      if (scrollTop > 200) {
+        progressBar.style.display = 'block';
+      }
+    });
+
+    // =========================================================================
+    // Lesson steps – toggle open/close
+    // =========================================================================
+    let openedSteps = new Set();
+
+    function toggleStep(stepEl) {
+      const isActive = stepEl.classList.contains('active');
+      stepEl.classList.toggle('active', !isActive);
+
+      const stepNum = parseInt(stepEl.dataset.step);
+      if (!isActive) {
+        openedSteps.add(stepNum);
+        // Update the hint text
+        const hint = stepEl.querySelector('.step-header span:last-child');
+        if (hint) hint.textContent = 'click to close ▴';
+      } else {
+        const hint = stepEl.querySelector('.step-header span:last-child');
+        if (hint) hint.textContent = 'click to open ▾';
+      }
+    }
+
+    // =========================================================================
+    // GPU cores grid
+    // =========================================================================
+    (function buildGPUGrid() {
+      const grid = document.getElementById('gpuGrid');
+      if (!grid) return;
+      for (let i = 0; i < 160; i++) {
+        const core = document.createElement('div');
+        core.className = 'gpu-core';
+        core.style.setProperty('--delay', (Math.random() * 2 + 0.5) + 's');
+        core.style.animationDelay = (Math.random() * 2) + 's';
+        grid.appendChild(core);
+      }
+    })();
+
+    // =========================================================================
+    // CSV vs Parquet demo
+    // =========================================================================
+    (function buildCSVDemo() {
+      const csvRows = document.getElementById('csvRows');
+      const parquetCol = document.getElementById('parquetCol');
+      if (!csvRows || !parquetCol) return;
+
+      const data = [
+        ['Alice','7.2','high','9/10'],
+        ['Bob','4.1','low','4/10'],
+        ['Carol','6.8','med','7/10'],
+      ];
+
+      data.forEach(row => {
+        const r = document.createElement('div');
+        r.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:3px;';
+        row.forEach((cell, i) => {
+          const c = document.createElement('span');
+          c.textContent = cell;
+          c.style.color = i === 0 ? '#ccc' : '#888';
+          r.appendChild(c);
+        });
+        csvRows.appendChild(r);
+      });
+
+      data.forEach(row => {
+        const chip = document.createElement('div');
+        chip.textContent = row[1];
+        chip.style.cssText = 'color:var(--green);font-weight:700;';
+        parquetCol.appendChild(chip);
+      });
+    })();
+
+    // =========================================================================
+    // Token counter animation (Lesson 4)
+    // =========================================================================
+    let tokenInterval = null;
+
+    function startTokenCounter() {
+      const el = document.getElementById('tokenCounter');
+      if (!el || tokenInterval) return;
+      let val = 0;
+      const target = 87;
+      tokenInterval = setInterval(() => {
+        val = Math.min(val + Math.floor(Math.random() * 8) + 1, target);
+        el.textContent = val;
+        if (val >= target) {
+          clearInterval(tokenInterval);
+          tokenInterval = null;
+          setTimeout(startTokenCounter, 1500);
+          val = 0;
+        }
+      }, 80);
+    }
+
+    // Start token counter when Lesson 4 becomes visible
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) startTokenCounter();
+      });
+    }, { threshold: 0.3 });
+
+    const step4 = document.querySelector('.step[data-step="4"]');
+    if (step4) observer.observe(step4);
+
+    // =========================================================================
+    // Data flow animation
+    // =========================================================================
+    const flowNodes = [
+      { nodeId: 'fn-browser',  arrowId: 'fa-1', msg: '💬 You type your question…',                delay: 0    },
+      { nodeId: 'fn-tunnel',   arrowId: 'fa-2', msg: '🔀 Passing through the secret tunnel…',    delay: 1200 },
+      { nodeId: 'fn-k8s',      arrowId: 'fa-3', msg: '🏗️ Kubernetes routes it to the AI pod…',   delay: 2400 },
+      { nodeId: 'fn-nim',      arrowId: 'fa-4', msg: '🧠 Llama 3 is thinking on the GPU…',        delay: 3600 },
+      { nodeId: 'fn-response', arrowId: null,   msg: '✅ Answer is back in your browser!',         delay: 5000 },
+    ];
+
+    let flowAnimating = false;
+
+    function animateFlow() {
+      if (flowAnimating) return;
+      flowAnimating = true;
+      const btn = document.getElementById('animateFlowBtn');
+      const status = document.getElementById('flowStatus');
+      btn.disabled = true;
+      resetFlow(true);
+
+      flowNodes.forEach(({ nodeId, arrowId, msg, delay }) => {
+        setTimeout(() => {
+          const node = document.getElementById(nodeId);
+          if (node) node.classList.add(node.dataset.lit);
+
+          if (arrowId) {
+            const arrow = document.getElementById(arrowId);
+            if (arrow) arrow.classList.add('lit');
+          }
+
+          if (status) status.textContent = msg;
+
+          if (nodeId === 'fn-response') {
+            setTimeout(() => {
+              flowAnimating = false;
+              btn.disabled = false;
+              status.textContent = '🎉 Journey complete! Press again to replay.';
+            }, 800);
+          }
+        }, delay);
+      });
+    }
+
+    function resetFlow(silent) {
+      flowNodes.forEach(({ nodeId, arrowId }) => {
+        const node = document.getElementById(nodeId);
+        if (node) node.className = 'flow-node'; // remove all lit classes
+
+        if (arrowId) {
+          const arrow = document.getElementById(arrowId);
+          if (arrow) arrow.classList.remove('lit');
+        }
+      });
+
+      if (!silent) {
+        const status = document.getElementById('flowStatus');
+        if (status) status.textContent = '';
+        const btn = document.getElementById('animateFlowBtn');
+        if (btn) btn.disabled = false;
+        flowAnimating = false;
+      }
+    }
+
+    // =========================================================================
+    // Quiz
+    // =========================================================================
+    const questions = [
+      {
+        q:    "What is Parquet and why do we use it?",
+        hint: "Think about the magic library analogy from Lesson 1.",
+        opts: [
+          "A fancy video game format for storing game saves",
+          "A column-based file format that lets us read only the data we need — much faster than CSV",
+          "A type of GPU chip made by NVIDIA",
+          "A Kubernetes command to start pods",
+        ],
+        correct: 1,
+        explanation: "✅ Correct! Parquet stores data column-by-column, so you only read what you need — like going straight to the right chapter in a book.",
+      },
+      {
+        q:    "Why is a GPU so much faster than a CPU for AI work?",
+        hint: "Remember the '1 genius vs thousands of helpers' analogy from Lesson 2.",
+        opts: [
+          "GPUs have a bigger screen",
+          "GPUs run at higher temperatures",
+          "GPUs have thousands of cores that solve many small problems at the same time",
+          "GPUs are made of gold",
+        ],
+        correct: 2,
+        explanation: "✅ Exactly! GPUs have thousands of cores working in parallel — perfect for the huge amounts of math that AI requires.",
+      },
+      {
+        q:    "What does Kubernetes do in this project?",
+        hint: "Think about the restaurant kitchen manager from Lesson 3.",
+        opts: [
+          "It stores the Parquet data files",
+          "It runs the browser frontend",
+          "It manages and schedules containers across cloud computers, auto-healing when anything breaks",
+          "It compresses AI model weights",
+        ],
+        correct: 2,
+        explanation: "✅ Right! Kubernetes is the cluster manager — it places, monitors, and restarts containers automatically.",
+      },
+      {
+        q:    "What is TensorRT and what does it do to the AI model?",
+        hint: "It was described as a racing car in Lesson 4.",
+        opts: [
+          "It is a database for storing training data",
+          "It is NVIDIA's compiler that makes Llama 3 run up to 2× faster on the GPU",
+          "It is a programming language for writing AI models",
+          "It is an API for generating images",
+        ],
+        correct: 1,
+        explanation: "✅ Correct! TensorRT compiles and optimizes the AI model specifically for the GPU it's running on, nearly doubling speed.",
+      },
+      {
+        q:    "Why does the browser need to remember the full conversation history?",
+        hint: "From Lesson 5 — the API is 'stateless'.",
+        opts: [
+          "To save battery life on your laptop",
+          "Because the AI's REST API is stateless — it forgets between requests, so the browser sends the whole history each time",
+          "Because Kubernetes deletes messages automatically",
+          "To make the chat look prettier",
+        ],
+        correct: 1,
+        explanation: "✅ Spot on! The API is stateless — each request is independent. The browser keeps the full history and sends it every time so the AI has context.",
+      },
+    ];
+
+    let currentQ = 0;
+    let scores   = [];
+
+    function buildScoreDots() {
+      const dots = document.getElementById('scoreDots');
+      dots.innerHTML = '';
+      questions.forEach((_, i) => {
+        const d = document.createElement('div');
+        d.className = 'score-dot' + (scores[i] === true ? ' correct' : scores[i] === false ? ' wrong' : '');
+        dots.appendChild(d);
+      });
+    }
+
+    function renderQuestion() {
+      const q = questions[currentQ];
+      document.getElementById('quizQuestionLabel').textContent = `Question ${currentQ + 1} of ${questions.length}`;
+      document.getElementById('quizQuestion').textContent      = q.q;
+      document.getElementById('quizHint').textContent          = '💡 Hint: ' + q.hint;
+
+      const opts = document.getElementById('quizOptions');
+      opts.innerHTML = '';
+      q.opts.forEach((opt, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'quiz-option';
+        btn.innerHTML = `<span class="quiz-option-letter">${String.fromCharCode(65 + i)}</span>${opt}`;
+        btn.onclick = () => selectAnswer(i, q.correct, q.explanation);
+        opts.appendChild(btn);
+      });
+
+      const fb = document.getElementById('quizFeedback');
+      fb.className = 'quiz-feedback';
+      fb.textContent = '';
+
+      document.getElementById('nextQuizBtn').style.display = 'none';
+      buildScoreDots();
+    }
+
+    function selectAnswer(selected, correct, explanation) {
+      const optBtns = document.querySelectorAll('.quiz-option');
+      optBtns.forEach(b => b.disabled = true);
+      optBtns[selected].classList.add(selected === correct ? 'correct' : 'wrong');
+      if (selected !== correct) optBtns[correct].classList.add('correct');
+
+      const isCorrect = selected === correct;
+      scores[currentQ] = isCorrect;
+      buildScoreDots();
+
+      const fb = document.getElementById('quizFeedback');
+      fb.textContent  = isCorrect ? explanation : `❌ Not quite! ${explanation}`;
+      fb.className    = 'quiz-feedback show ' + (isCorrect ? 'correct' : 'wrong');
+
+      const nextBtn = document.getElementById('nextQuizBtn');
+      nextBtn.style.display = 'inline-flex';
+      nextBtn.textContent = currentQ < questions.length - 1 ? 'Next Question →' : 'See Results 🏆';
+    }
+
+    function nextQuestion() {
+      currentQ++;
+      if (currentQ >= questions.length) {
+        showResult();
+      } else {
+        renderQuestion();
+      }
+    }
+
+    function showResult() {
+      document.getElementById('quizBody').style.display   = 'none';
+      document.getElementById('quizResult').className     = 'quiz-result show';
+
+      const correct = scores.filter(Boolean).length;
+      const emojis  = ['😅', '🙂', '😊', '🥳', '🏆'];
+      const titles  = ['Keep trying!', 'Good effort!', 'Well done!', 'Excellent!', 'Perfect score! 🌟'];
+      const msgs    = [
+        'Go back and re-read the lessons — you\'ve got this!',
+        'You\'re getting there! Review the lessons and try again.',
+        'Solid understanding! A little review will get you to 100%.',
+        'Amazing! You really understand how this system works.',
+        'You could explain NeuroCompass to anyone now — even a pro!',
+      ];
+
+      const idx = Math.min(Math.floor((correct / questions.length) * (emojis.length - 0.01)), emojis.length - 1);
+      document.getElementById('resultEmoji').textContent = emojis[idx];
+      document.getElementById('resultTitle').textContent = `${correct}/${questions.length} — ${titles[idx]}`;
+      document.getElementById('resultMsg').textContent   = msgs[idx];
+    }
+
+    function restartQuiz() {
+      currentQ = 0;
+      scores   = [];
+      document.getElementById('quizBody').style.display   = 'block';
+      document.getElementById('quizResult').className     = 'quiz-result';
+      renderQuestion();
+    }
+
+    // Initialize quiz
+    renderQuestion();
+
+    // =========================================================================
+    // Copy prompts to clipboard
+    // =========================================================================
+    function copyPrompt(card) {
+      const text = card.querySelector('.prompt-text').textContent.replace(/^"|"$/g, '');
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('📋 Copied to clipboard!');
+      }).catch(() => {
+        showToast('✏️ Select the text above and copy manually');
+      });
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+  </script>
+</body>
+</html>
