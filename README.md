@@ -1,110 +1,189 @@
-# goldenticket
-An end-to-end AI portfolio project demonstrating massive dataset processing with NVIDIA cuDF/UVM on Colab Enterprise and deploying Llama 3 via NVIDIA NIM on GKE.
+# NeuroCompass 🧭
 
-Golden Ticket Submission Pitch
-NeuroCompass – GPU-Accelerated Cognitive Drift Detection
-Why This Project Exists
+> **GPU-Accelerated Cognitive Drift Detection** — an end-to-end AI engineering portfolio project built on Google Cloud, NVIDIA RAPIDS, and Llama 3.
 
-Most AI demos focus on novelty.
-This project focuses on direction.
+NeuroCompass is a full-stack AI application that processes large health and behavioral datasets on a GPU using NVIDIA's cuDF library, then serves a fine-tuned Llama 3 language model through NVIDIA NIM (Inference Microservices) on a Kubernetes cluster. A lightweight web frontend lets users chat with the model in real time. The project is designed to show every layer of a production AI system — from raw data on cloud storage all the way to a response in the browser — while remaining accessible to anyone who wants to learn how these technologies fit together.
 
-NeuroCompass demonstrates how enterprise-grade AI infrastructure can be used to detect behavioral drift in large-scale personal or health datasets and surface structured guidance when someone loses clarity or routine.
+---
 
-This is not a toy chatbot.
-It is a systems-level implementation of AI-assisted course correction.
+## 📐 Architecture Overview
 
-What Makes This Different
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         USER BROWSER                           │
+│                      frontend/index.html                       │
+│              (chat UI with loading + error states)             │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │  HTTP POST /v1/chat/completions
+                           │  (OpenAI-compatible REST API)
+┌──────────────────────────▼──────────────────────────────────────┐
+│                   kubectl port-forward                          │
+│              (tunnels traffic to the GKE cluster)              │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+┌──────────────────────────▼──────────────────────────────────────┐
+│               Google Kubernetes Engine (GKE)                   │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │   NVIDIA NIM Pod (Llama 3 · TensorRT-optimized)         │   │
+│  │   GPU Node Pool  (NVIDIA L4 or A100)                    │   │
+│  └─────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
 
-This project does not rely on abstract APIs or local notebooks.
+┌─────────────────────────────────────────────────────────────────┐
+│            Colab Enterprise (data pre-processing)              │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │   scripts/process_data.py                               │   │
+│  │   cuDF + Unified Virtual Memory (UVM)                   │   │
+│  │   Reads Parquet from GCS → cleans → writes Parquet      │   │
+│  └─────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+```
 
-It demonstrates:
+---
 
-• Large-scale GPU-accelerated data processing
-• Unified memory management to prevent runtime failure
-• Production deployment on Kubernetes with dedicated GPU nodes
-• NVIDIA Inference Microservices optimized with TensorRT
-• End-to-end integration from UI to GPU-backed model
+## ⚙️ How It Works — Step by Step
 
-Every layer is intentional.
+1. **Raw data lands in Google Cloud Storage** as Parquet files. Parquet is a column-based file format that lets you load only the columns you need, which is much faster than a traditional CSV when datasets are large.
 
-Technical Depth
-Phase 1 – GPU Data Engineering
+2. **A GPU processes the data** (`scripts/process_data.py`). Instead of using regular pandas (which runs on CPU), the script uses **cuDF** — a drop-in pandas replacement that runs on the GPU. Unified Virtual Memory (UVM) is enabled so that if the dataset is larger than the GPU's memory, the overflow spills automatically into regular RAM instead of crashing.
 
-Massive datasets are stored in Apache Parquet within Google Cloud Storage to ensure columnar efficiency and selective I/O.
+3. **A Kubernetes cluster is created on Google Cloud** (`scripts/setup_gke.sh`). The cluster has a special *node pool* with a physical GPU attached to it (NVIDIA L4 or A100). This is where the AI model will live.
 
-The processing pipeline runs in Colab Enterprise and uses:
+4. **NVIDIA NIM is deployed onto the cluster** (`scripts/deploy_nim.sh`). NIM is NVIDIA's pre-packaged inference server. It downloads the Llama 3 model weights, optimizes them with TensorRT for maximum GPU throughput, and exposes an OpenAI-compatible REST API endpoint.
 
-%load_ext cudf.pandas
+5. **The browser connects to the model** via `kubectl port-forward`, which creates a secure tunnel from your laptop to the Kubernetes pod. The frontend (`frontend/index.html`) sends chat messages and displays the AI's structured responses.
 
-This enables zero-code GPU acceleration using NVIDIA RAPIDS.
+---
 
-Unified Virtual Memory is explicitly enabled to prevent Out-of-Memory crashes by spilling excess data from GPU VRAM into CPU RAM.
+## 👥 Who This Is For
 
-Profiling is included to benchmark execution time and detect CPU fallback.
+| Audience | Why it's relevant |
+|---|---|
+| **ML engineers moving to production** | Shows how to take a model from a notebook to a real Kubernetes deployment |
+| **Data engineers learning GPU acceleration** | Demonstrates cuDF as a drop-in pandas replacement with UVM safety |
+| **Full-stack developers curious about AI** | Illustrates how a standard REST API connects a UI to a GPU-backed model |
+| **Students building portfolio projects** | Each file is commented to explain *why*, not just *what* |
 
-This phase demonstrates not just acceleration, but performance literacy.
+---
 
-Phase 2 – Production Model Serving
+## 📚 What You Will Learn From This Repo
 
-Infrastructure is provisioned via gcloud CLI.
+- How to store and load large datasets efficiently using **Apache Parquet**
+- What **GPU acceleration** means in practice (and when it matters)
+- How **Unified Virtual Memory** prevents out-of-memory crashes
+- How to create and manage a **Kubernetes cluster** on Google Cloud with `gcloud` and `kubectl`
+- How to deploy a production AI model using **Helm** charts
+- What **NVIDIA NIM** is and why it is faster than running a model from scratch
+- How to connect a browser frontend to a GPU-backed model via a REST API
 
-A GPU-backed GKE cluster is created with a dedicated NVIDIA L4 or A100 node pool.
+---
 
-NVIDIA NIM is deployed via Helm using an authenticated NGC container.
+## 🔑 Key Technology Glossary (Beginner-Friendly)
 
-The model runs as a microservice, optimized with TensorRT.
+| Term | Plain English |
+|---|---|
+| **Parquet** | A smart file format for large tables. Instead of storing data row-by-row like a spreadsheet, it stores it column-by-column, so you can read only the columns you actually need. Much faster for analytics. |
+| **cuDF** | Think of it as pandas, but it runs on your GPU instead of your CPU. You import it the same way and use the same function names — it just runs 10–100× faster on large datasets. |
+| **Unified Virtual Memory (UVM)** | A safety net for GPU memory. If your dataset is bigger than the GPU's RAM, UVM automatically borrows space from the CPU's RAM rather than crashing the program. |
+| **GKE (Google Kubernetes Engine)** | A managed service that lets you run containers (packaged applications) on a cluster of machines in the cloud. You describe what you want to run and Google manages the servers for you. |
+| **NVIDIA NIM** | A ready-to-deploy container from NVIDIA that runs a large language model optimized for their GPUs. You deploy it like any other container, and it gives you an API that looks just like OpenAI's. |
+| **TensorRT** | NVIDIA's compiler for AI models. It analyzes the model and rewrites it to run as fast as possible on the target GPU, reducing inference time significantly. |
+| **Helm** | A package manager for Kubernetes — like `apt` or `pip`, but for deploying applications to a Kubernetes cluster. |
 
-This shows production-grade MLOps competency, not local experimentation.
+---
 
-Phase 3 – Full Stack Integration
+## 🚀 Quick Start
 
-A minimal frontend sends OpenAI-compatible REST requests to a port-forwarded inference endpoint.
+> **Prerequisites:** Google Cloud account, NVIDIA NGC API key, `gcloud` CLI, `kubectl`, `helm` installed locally.
 
-User → UI → REST → GPU model → Structured response.
+**1. Clone the repository**
+```bash
+git clone https://github.com/zainkhan1994/goldenticket.git
+cd goldenticket
+```
 
-This validates that the entire pipeline works end-to-end.
+**2. Authenticate with Google Cloud**
+```bash
+gcloud auth login
+gcloud config set project YOUR_PROJECT_ID
+```
 
-Why It Matters
+**3. Process the dataset on a GPU (run in Colab Enterprise)**
+```bash
+# Open scripts/process_data.py in Colab Enterprise
+# Set your GCS bucket name at the top of the file, then run all cells
+```
 
-This project demonstrates how powerful cloud + GPU infrastructure can serve a human-centered purpose.
+**4. Create the GKE cluster and GPU node pool**
+```bash
+bash scripts/setup_gke.sh
+```
 
-NeuroCompass detects deviations in behavioral or health patterns and provides corrective prompts when structure begins to break down.
+**5. Deploy NVIDIA NIM (Llama 3)**
+```bash
+export NGC_API_KEY="your-ngc-api-key-here"
+bash scripts/deploy_nim.sh
+```
 
-It bridges:
+**6. Forward the inference port to your local machine**
+```bash
+kubectl port-forward service/nim-llm 8000:8000
+```
 
-High-performance AI systems
-and
-Cognitive vulnerability.
+**7. Open the frontend**
+```bash
+# Open frontend/index.html in your browser
+# The chat UI connects to http://localhost:8000 by default
+```
 
-It proves that enterprise GPU acceleration is not just for research labs or benchmarks, but for real-world stability systems.
+---
 
-What This Demonstrates About Me
+## 💰 Cost Awareness
 
-I design systems, not scripts.
+GPU instances on Google Cloud are expensive. Keep these points in mind to avoid unexpected charges:
 
-I understand:
+| Action | Why it matters |
+|---|---|
+| **Delete the GPU node pool when not in use** | An NVIDIA L4 node costs roughly $0.70/hour even when idle. Run `gcloud container node-pools delete gpu-pool --cluster neurocompass-cluster` when finished. |
+| **Set cluster auto-scaling to 0 minimum nodes** | The setup script configures `--min-nodes 0` so the GPU node scales down automatically when there are no pending pods. |
+| **Use `kubectl port-forward` instead of a LoadBalancer** | A public LoadBalancer has a monthly fee. Port-forwarding is free and sufficient for demos. |
+| **Delete the entire cluster after demos** | Run `gcloud container clusters delete neurocompass-cluster` to remove all resources. |
+| **Monitor spend in the GCP console** | Set a billing alert at $20 so you receive an email before costs escalate. |
 
-• GPU memory hierarchy
-• Data format optimization
-• Kubernetes GPU scheduling
-• Secure container deployment
-• Inference microservices
-• API integration patterns
+---
 
-I do not treat AI as a black box.
+## 📁 Project Structure
 
-I treat it as infrastructure.
+```
+goldenticket/
+├── README.md                  ← You are here — project overview and quick start
+├── CONTRIBUTING.md            ← How to extend or contribute to this project
+│
+├── scripts/
+│   ├── setup_gke.sh           ← Creates the GKE cluster and GPU node pool
+│   ├── deploy_nim.sh          ← Deploys NVIDIA NIM via Helm onto the cluster
+│   └── process_data.py        ← GPU-accelerated data pipeline (cuDF + UVM)
+│
+├── frontend/
+│   └── index.html             ← Browser chat UI with loading states and error handling
+│
+└── docs/
+    ├── architecture.md        ← Deeper technical explanation of every component
+    ├── glossary.md            ← Definitions for GPU VRAM, UVM, TensorRT, and more
+    └── demo_script.md         ← 2-minute pitch script for presenting to judges
+```
 
-Closing Statement
+---
 
-The Golden Ticket represents access to the most advanced AI ecosystem.
+## 📖 Further Reading
 
-NeuroCompass represents the ability to build responsibly within it.
+- [docs/architecture.md](docs/architecture.md) — Technical deep-dive into each component
+- [docs/glossary.md](docs/glossary.md) — Plain-English definitions of every technical term used
+- [docs/demo_script.md](docs/demo_script.md) — How to present this project in two minutes
+- [CONTRIBUTING.md](CONTRIBUTING.md) — How to extend or improve this project
 
-This project shows that I can:
+---
 
-Engineer at scale
-Deploy in production
-Optimize with GPU acceleration
-and
-Translate it into something that helps people regain direction when they feel lost.
+## 🏆 About This Project
+
+NeuroCompass was built as a Golden Ticket submission demonstrating enterprise-grade AI infrastructure applied to a human-centered use case: detecting behavioral drift and surfacing structured guidance. Every technology choice reflects a real production constraint, not a tutorial default. The goal is to show that GPU acceleration, Kubernetes, and large language models are not research luxuries — they are engineering tools that can be applied thoughtfully to problems that matter.
