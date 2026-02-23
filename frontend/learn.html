@@ -901,16 +901,56 @@
       .quiz-card { padding: 22px; }
       .facts-grid { grid-template-columns: 1fr 1fr; }
     }
+
+    /* -----------------------------------------------------------------------
+       Site navigation bar — links to overview and chat pages
+    ----------------------------------------------------------------------- */
+    .site-nav {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      height: 48px;
+      background: rgba(13, 15, 26, 0.95);
+      border-bottom: 1px solid var(--border);
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 200;
+    }
+
+    .site-nav a.brand { font-weight: 700; color: var(--green); font-size: 0.95rem; text-decoration: none; }
+    .site-nav .links  { display: flex; gap: 4px; }
+    .site-nav .links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.82rem;
+      padding: 5px 10px;
+      border-radius: 6px;
+    }
+    .site-nav .links a.active { color: var(--green); }
   </style>
 </head>
 <body>
+
+  <!-- Navigation -->
+  <nav class="site-nav">
+    <a href="overview.html" class="brand">🧭 NeuroCompass</a>
+    <div class="links">
+      <a href="overview.html">Overview</a>
+      <a href="index.html">Chat UI</a>
+      <a href="learn.html" class="active">Learn</a>
+    </div>
+  </nav>
 
   <!-- =====================================================================
        Starfield background
   ====================================================================== -->
   <div id="stars"></div>
 
-  <div class="page">
+  <div class="page" style="padding-top:48px;">
 
     <!-- ===================================================================
          STICKY PROGRESS BAR

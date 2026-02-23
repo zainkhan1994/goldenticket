@@ -233,9 +233,48 @@
       text-align: center;
       margin-top: 8px;
     }
+
+    /* -----------------------------------------------------------------------
+       Site navigation bar — links to overview and learn pages
+    ----------------------------------------------------------------------- */
+    .site-nav {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      height: 48px;
+      background: rgba(15, 17, 23, 0.95);
+      border-bottom: 1px solid #2d3748;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      margin-bottom: 8px;
+    }
+
+    .site-nav a.brand { font-weight: 700; color: #76d400; font-size: 0.95rem; text-decoration: none; }
+    .site-nav .links  { display: flex; gap: 4px; }
+    .site-nav .links a {
+      color: #94a3b8;
+      text-decoration: none;
+      font-size: 0.82rem;
+      padding: 5px 10px;
+      border-radius: 6px;
+    }
+    .site-nav .links a.active { color: #76d400; }
   </style>
 </head>
 <body>
+  <!-- Navigation -->
+  <nav class="site-nav">
+    <a href="overview.html" class="brand">🧭 NeuroCompass</a>
+    <div class="links">
+      <a href="overview.html">Overview</a>
+      <a href="index.html" class="active">Chat UI</a>
+      <a href="learn.html">Learn</a>
+    </div>
+  </nav>
+
   <div class="app">
 
     <!-- ===================================================================
