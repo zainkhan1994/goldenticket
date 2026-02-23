@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NeuroCompass — Architecture Overview</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:  #76d400;
+      --blue:   #3b82f6;
+      --purple: #8b5cf6;
+      --orange: #f97316;
+      --bg:     #0f1117;
+      --card:   #1e2130;
+      --border: #2d3748;
+      --text:   #e2e8f0;
+      --muted:  #94a3b8;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ---- NAV ---- */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      height: 52px;
+      background: rgba(15,17,23,0.95);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-brand {
+      font-weight: 700;
+      color: var(--green);
+      font-size: 1rem;
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 4px;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: color 0.15s, background 0.15s;
+    }
+
+    .nav-links a:hover { color: var(--text); background: var(--card); }
+    .nav-links a.active { color: var(--green); }
+
+    /* ---- HERO ---- */
+    .hero {
+      text-align: center;
+      padding: 64px 24px 48px;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 6vw, 3rem);
+      font-weight: 900;
+      line-height: 1.15;
+      margin-bottom: 16px;
+    }
+
+    .hero h1 span {
+      color: var(--green);
+    }
+
+    .hero p {
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.7;
+      max-width: 540px;
+      margin: 0 auto 32px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+      transition: opacity 0.15s, transform 0.15s;
+    }
+
+    .btn:hover { opacity: 0.88; transform: translateY(-1px); }
+
+    .btn-primary { background: var(--green); color: #0f1117; }
+    .btn-outline { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+    .btn-outline:hover { color: var(--text); border-color: var(--muted); }
+
+    /* ---- SECTION ---- */
+    section {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 24px 64px;
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 24px;
+    }
+
+    /* ---- ARCHITECTURE DIAGRAM ---- */
+    .arch {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      position: relative;
+    }
+
+    .arch-row {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+    }
+
+    .arch-connector {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 36px;
+      padding-left: 80px;
+    }
+
+    .arch-connector::after {
+      content: '';
+      display: block;
+      width: 2px;
+      height: 100%;
+      background: var(--border);
+    }
+
+    .arch-card {
+      flex: 1;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      transition: border-color 0.2s;
+    }
+
+    .arch-card:hover { border-color: var(--green); }
+
+    .arch-icon {
+      font-size: 2rem;
+      flex-shrink: 0;
+      width: 52px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+    }
+
+    .arch-body h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .arch-body p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .arch-body .tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 100px;
+      margin-top: 8px;
+      margin-right: 4px;
+    }
+
+    .tag-green  { background: rgba(118,212,0,0.15);  color: var(--green);  }
+    .tag-blue   { background: rgba(59,130,246,0.15); color: var(--blue);   }
+    .tag-purple { background: rgba(139,92,246,0.15); color: var(--purple); }
+    .tag-orange { background: rgba(249,115,22,0.15); color: var(--orange); }
+
+    /* ---- STATS GRID ---- */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 0;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--green);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* ---- FILE MAP ---- */
+    .file-map {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+    }
+
+    .file-map .tree-line {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 2;
+      white-space: pre;
+    }
+
+    .file-map .tree-line .hl-green  { color: var(--green); }
+    .file-map .tree-line .hl-blue   { color: var(--blue); }
+    .file-map .tree-line .hl-purple { color: var(--purple); }
+    .file-map .tree-line .hl-orange { color: var(--orange); }
+    .file-map .tree-line .hl-muted  { color: #4a5568; }
+
+    /* ---- DATA FLOW ---- */
+    .flow {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      overflow-x: auto;
+      padding-bottom: 8px;
+    }
+
+    .flow-step {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      text-align: center;
+    }
+
+    .flow-bubble {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      border: 2px solid var(--border);
+      background: var(--card);
+    }
+
+    .flow-step p {
+      font-size: 0.75rem;
+      color: var(--muted);
+      max-width: 80px;
+    }
+
+    .flow-arrow {
+      flex-shrink: 0;
+      width: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--border);
+      font-size: 1.2rem;
+      margin-bottom: 24px;
+    }
+
+    /* ---- FOOTER ---- */
+    footer {
+      text-align: center;
+      padding: 24px;
+      font-size: 0.75rem;
+      color: var(--border);
+      border-top: 1px solid var(--border);
+    }
+
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav>
+    <a class="nav-brand" href="overview.html">🧭 NeuroCompass</a>
+    <div class="nav-links">
+      <a href="overview.html" class="active">Overview</a>
+      <a href="index.html">Chat UI</a>
+      <a href="learn.html">Learn</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <div class="hero">
+    <h1>GPU-Accelerated<br /><span>Cognitive Drift Detection</span></h1>
+    <p>
+      An end-to-end AI engineering portfolio project connecting Google Cloud Storage,
+      NVIDIA RAPIDS on Colab, a GKE cluster, NVIDIA NIM, and a browser chat interface.
+    </p>
+    <div class="hero-actions">
+      <a href="index.html" class="btn btn-primary">💬 Open Chat UI</a>
+      <a href="learn.html" class="btn btn-outline">📚 Learn How It Works</a>
+      <a href="https://github.com/zainkhan1994/goldenticket" class="btn btn-outline" target="_blank" rel="noopener noreferrer">⭐ Source</a>
+    </div>
+  </div>
+
+  <!-- Key stats -->
+  <section>
+    <p class="section-title">At a Glance</p>
+    <div class="stats">
+      <div class="stat-card">
+        <!-- Source: docs/architecture.md benchmark table — groupby().mean() on 10M rows, A100 GPU vs standard pandas on CPU -->
+        <div class="stat-value">112×</div>
+        <div class="stat-label">GPU vs CPU speedup for groupby on 10M rows (cuDF on A100)</div>
+      </div>
+      <div class="stat-card">
+        <!-- Source: docs/architecture.md — TensorRT optimisation details for Llama 3 8B on L4 -->
+        <div class="stat-value">2×</div>
+        <div class="stat-label">Token throughput improvement from TensorRT vs vanilla HuggingFace</div>
+      </div>
+      <div class="stat-card">
+        <!-- GPU node pool auto-scales to 0 minimum nodes (--min-nodes 0 in setup_gke.sh) -->
+        <div class="stat-value">$0</div>
+        <div class="stat-label">Idle GPU cost — node pool auto-scales to zero when not in use</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">5</div>
+        <div class="stat-label">Architecture layers from raw data to browser response</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Architecture layers -->
+  <section>
+    <p class="section-title">Architecture — 5 Layers</p>
+    <div class="arch">
+
+      <!-- Layer 1 -->
+      <div class="arch-row">
+        <div class="arch-card">
+          <div class="arch-icon">🗄️</div>
+          <div class="arch-body">
+            <h3>1 · Data Layer — Google Cloud Storage</h3>
+            <p>
+              Raw behavioral and health data lives in GCS as <strong>Apache Parquet</strong> files.
+              Parquet's columnar layout means only the columns you query are read — roughly 50× less I/O
+              than CSV for a 50-column dataset. Per-column compression typically achieves 3–6× size reduction.
+            </p>
+            <span class="tag tag-blue">Parquet</span>
+            <span class="tag tag-blue">GCS</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="arch-connector"></div>
+
+      <!-- Layer 2 -->
+      <div class="arch-row">
+        <div class="arch-card">
+          <div class="arch-icon">⚡</div>
+          <div class="arch-body">
+            <h3>2 · Processing Layer — cuDF + UVM on Colab Enterprise</h3>
+            <p>
+              <code>scripts/process_data.py</code> loads the Parquet data using <strong>cuDF</strong>,
+              NVIDIA's drop-in pandas replacement that runs on the GPU. A single <code>%load_ext cudf.pandas</code>
+              call redirects all pandas operations to the GPU. <strong>Unified Virtual Memory (UVM)</strong>
+              is enabled via RMM so datasets larger than GPU VRAM spill to CPU RAM instead of crashing.
+            </p>
+            <span class="tag tag-green">cuDF</span>
+            <span class="tag tag-green">NVIDIA RAPIDS</span>
+            <span class="tag tag-green">UVM</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="arch-connector"></div>
+
+      <!-- Layer 3 -->
+      <div class="arch-row">
+        <div class="arch-card">
+          <div class="arch-icon">☸️</div>
+          <div class="arch-body">
+            <h3>3 · Orchestration Layer — Google Kubernetes Engine</h3>
+            <p>
+              <code>scripts/setup_gke.sh</code> creates a GKE cluster with two node pools: a default CPU pool
+              for system components and a GPU pool (<code>gpu-pool</code>) that auto-scales from 0 to 1 nodes.
+              The GPU pool only incurs cost (~$0.70/hr for an L4 node, approximate; see GCP pricing) when a GPU pod
+              is scheduled. The cluster control plane (~$0.10/hr, approximate) is always running.
+            </p>
+            <span class="tag tag-purple">GKE</span>
+            <span class="tag tag-purple">Kubernetes</span>
+            <span class="tag tag-purple">Auto-scaling</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="arch-connector"></div>
+
+      <!-- Layer 4 -->
+      <div class="arch-row">
+        <div class="arch-card">
+          <div class="arch-icon">🧠</div>
+          <div class="arch-body">
+            <h3>4 · Inference Layer — NVIDIA NIM (Llama 3 8B)</h3>
+            <p>
+              <code>scripts/deploy_nim.sh</code> deploys NIM via Helm. NIM pulls Llama 3 weights from NGC,
+              compiles them with <strong>TensorRT</strong> for the specific GPU type (layer fusion, FP16
+              precision, kernel auto-tuning), and caches the engine on a persistent volume. It serves an
+              <strong>OpenAI-compatible REST API</strong> — no model serving code required.
+            </p>
+            <span class="tag tag-orange">NVIDIA NIM</span>
+            <span class="tag tag-orange">TensorRT</span>
+            <span class="tag tag-orange">Llama 3</span>
+            <span class="tag tag-orange">Helm</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="arch-connector"></div>
+
+      <!-- Layer 5 -->
+      <div class="arch-row">
+        <div class="arch-card">
+          <div class="arch-icon">🌐</div>
+          <div class="arch-body">
+            <h3>5 · Frontend Layer — Browser Chat UI</h3>
+            <p>
+              <code>frontend/index.html</code> is a single HTML file with no build tools or npm dependencies.
+              It maintains conversation history client-side (the API is stateless), pings <code>/v1/models</code>
+              on load to show connection status, and surfaces friendly error messages (e.g., "run kubectl
+              port-forward") when the model is unreachable. Traffic tunnels via <code>kubectl port-forward</code>
+              — no public LoadBalancer needed.
+            </p>
+            <span class="tag tag-blue">HTML / JS</span>
+            <span class="tag tag-blue">OpenAI API</span>
+            <span class="tag tag-blue">kubectl port-forward</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Data flow -->
+  <section>
+    <p class="section-title">Data Flow</p>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-bubble">📦</div>
+        <p>Parquet on GCS</p>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-bubble">⚡</div>
+        <p>cuDF GPU processing</p>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-bubble">☸️</div>
+        <p>GKE cluster</p>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-bubble">🧠</div>
+        <p>NIM / Llama 3</p>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-bubble">💬</div>
+        <p>Browser response</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- File map -->
+  <section>
+    <p class="section-title">Project Structure</p>
+    <div class="file-map">
+      <div class="tree-line">goldenticket/</div>
+      <div class="tree-line">├── <span class="hl-muted">README.md</span>                 ← project overview and quick start</div>
+      <div class="tree-line">├── <span class="hl-muted">CONTRIBUTING.md</span>           ← how to extend or contribute</div>
+      <div class="tree-line">│</div>
+      <div class="tree-line">├── scripts/</div>
+      <div class="tree-line">│   ├── <span class="hl-green">setup_gke.sh</span>          ← creates GKE cluster + GPU node pool</div>
+      <div class="tree-line">│   ├── <span class="hl-green">deploy_nim.sh</span>         ← deploys NVIDIA NIM via Helm</div>
+      <div class="tree-line">│   └── <span class="hl-green">process_data.py</span>       ← GPU data pipeline (cuDF + UVM)</div>
+      <div class="tree-line">│</div>
+      <div class="tree-line">├── frontend/</div>
+      <div class="tree-line">│   ├── <span class="hl-blue">overview.html</span>         ← this page — architecture overview</div>
+      <div class="tree-line">│   ├── <span class="hl-blue">index.html</span>            ← browser chat UI</div>
+      <div class="tree-line">│   └── <span class="hl-blue">learn.html</span>            ← interactive educational walkthrough</div>
+      <div class="tree-line">│</div>
+      <div class="tree-line">└── docs/</div>
+      <div class="tree-line">    ├── <span class="hl-purple">architecture.md</span>       ← technical deep-dive</div>
+      <div class="tree-line">    ├── <span class="hl-purple">glossary.md</span>           ← plain-English term definitions</div>
+      <div class="tree-line">    └── <span class="hl-purple">demo_script.md</span>        ← 2-minute pitch script</div>
+    </div>
+  </section>
+
+  <footer>
+    NeuroCompass · Powered by NVIDIA NIM · Llama 3 · TensorRT · GKE ·
+    <a href="https://github.com/zainkhan1994/goldenticket" target="_blank" rel="noopener noreferrer">GitHub</a>
+  </footer>
+
+</body>
+</html>
