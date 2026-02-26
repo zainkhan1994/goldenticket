@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NeuroCompass – AI Chat</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    header h1 {
+      font-size: 1.75rem;
+      color: #76b900; /* NVIDIA green */
+    }
+
+    header p {
+      font-size: 0.9rem;
+      color: #8b949e;
+      margin-top: 4px;
+    }
+
+    #chat-container {
+      width: 100%;
+      max-width: 720px;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      height: 70vh;
+    }
+
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .message {
+      max-width: 85%;
+      padding: 10px 14px;
+      border-radius: 10px;
+      line-height: 1.5;
+      font-size: 0.95rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .message.user {
+      align-self: flex-end;
+      background: #1f6feb;
+      color: #fff;
+      border-bottom-right-radius: 2px;
+    }
+
+    .message.assistant {
+      align-self: flex-start;
+      background: #21262d;
+      color: #e6edf3;
+      border: 1px solid #30363d;
+      border-bottom-left-radius: 2px;
+    }
+
+    .message.error {
+      align-self: flex-start;
+      background: #3d1f1f;
+      color: #f85149;
+      border: 1px solid #6e2222;
+      border-bottom-left-radius: 2px;
+    }
+
+    #input-area {
+      display: flex;
+      gap: 8px;
+      padding: 16px;
+      border-top: 1px solid #30363d;
+    }
+
+    #user-input {
+      flex: 1;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      color: #e6edf3;
+      font-size: 0.95rem;
+      padding: 10px 14px;
+      resize: none;
+      outline: none;
+      transition: border-color 0.2s;
+      height: 48px;
+      line-height: 1.5;
+    }
+
+    #user-input:focus { border-color: #58a6ff; }
+
+    #send-btn {
+      background: #76b900;
+      color: #0d1117;
+      border: none;
+      border-radius: 8px;
+      padding: 0 20px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, opacity 0.2s;
+      white-space: nowrap;
+    }
+
+    #send-btn:hover { background: #8fd600; }
+    #send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    #status {
+      font-size: 0.78rem;
+      color: #8b949e;
+      text-align: center;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>NeuroCompass</h1>
+    <p>GPU-Accelerated AI Chat · Llama 3 8B via NVIDIA NIM</p>
+  </header>
+
+  <div id="chat-container">
+    <div id="messages">
+      <div class="message assistant">
+        Hello! I'm running on a GPU-backed Llama 3 8B model via NVIDIA NIM.
+        Ask me anything about your behavioral or health data patterns.
+      </div>
+    </div>
+    <div id="input-area">
+      <textarea
+        id="user-input"
+        placeholder="Type a message and press Enter or click Send…"
+        rows="1"
+      ></textarea>
+      <button id="send-btn">Send</button>
+    </div>
+  </div>
+
+  <div id="status">
+    Connected to <code>http://localhost:8000/v1/chat/completions</code>
+  </div>
+
+  <script>
+    // HTTP is intentional here: this endpoint is a kubectl port-forward on
+    // localhost and never traverses the network. Use HTTPS for remote deployments.
+    const API_URL = "http://localhost:8000/v1/chat/completions";
+    const MODEL   = "meta/llama3-8b-instruct";
+
+    const messagesEl  = document.getElementById("messages");
+    const inputEl     = document.getElementById("user-input");
+    const sendBtn     = document.getElementById("send-btn");
+
+    // Conversation history sent with every request (OpenAI format)
+    const history = [
+      {
+        role: "system",
+        content:
+          "You are NeuroCompass, an AI assistant that helps users understand " +
+          "behavioral and cognitive drift patterns detected in their personal data. " +
+          "Be concise, structured, and supportive."
+      }
+    ];
+
+    function appendMessage(role, text) {
+      const div = document.createElement("div");
+      div.classList.add("message", role);
+      div.textContent = text;
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      return div;
+    }
+
+    async function sendMessage() {
+      const userText = inputEl.value.trim();
+      if (!userText) return;
+
+      inputEl.value = "";
+      sendBtn.disabled = true;
+
+      appendMessage("user", userText);
+      history.push({ role: "user", content: userText });
+
+      const thinkingEl = appendMessage("assistant", "…");
+
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: MODEL,
+            messages: history,
+            max_tokens: 512,
+            temperature: 0.7,
+            stream: false
+          })
+        });
+
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(`HTTP ${response.status}: ${errText}`);
+        }
+
+        const data = await response.json();
+        const assistantText = data.choices?.[0]?.message?.content ?? "(no response)";
+
+        thinkingEl.textContent = assistantText;
+        history.push({ role: "assistant", content: assistantText });
+      } catch (err) {
+        thinkingEl.className = "message error";
+        thinkingEl.textContent =
+          "Error: " + err.message +
+          "\n\nMake sure the NIM service is running and port-forwarded:\n" +
+          "  kubectl port-forward svc/llama3-8b-instruct-nim-llm 8000:8000 -n nim";
+      } finally {
+        sendBtn.disabled = false;
+        inputEl.focus();
+      }
+    }
+
+    sendBtn.addEventListener("click", sendMessage);
+
+    inputEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+  </script>
+</body>
+</html>
